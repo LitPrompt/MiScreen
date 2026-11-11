@@ -333,6 +333,7 @@ function connect() {
   const input = new InputHandler(canvas, send);
   const s: Session = { ws, video, audio, input, statTimer: 0, statusTimer: 0, screenOn: true };
   session = s;
+  if (pipWin) video.setWindow(pipWin);
 
   video.requestKeyFrame = () => send(simple(MsgType.ResetVideo));
   video.onError = (m) => toast(m, 8000);
@@ -342,6 +343,7 @@ function connect() {
     screenWrap.style.setProperty('--arw', String(w));
     screenWrap.style.setProperty('--arh', String(h));
     screenWrap.classList.toggle('landscape', w > h);
+    fitPipToVideo(w, h);
   };
   if (audio) audio.onError = (m) => toast(m, 6000);
 
@@ -501,7 +503,10 @@ function disconnect(keepImmersive = false) {
   canvas.classList.remove('live');
   canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
   placeholder.hidden = false;
-  if (!keepImmersive) setImmersive(false);
+  if (!keepImmersive) {
+    setImmersive(false);
+    closePip();
+  }
   connectBtn.textContent = '连接';
   connectBtn.classList.remove('danger');
   statsEl.dataset.on = 'false';
@@ -547,7 +552,11 @@ const actions: Record<string, () => void> = {
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     });
   },
-  fullscreen: () => setImmersive(!document.body.classList.contains('immersive')),
+  fullscreen: () => {
+    closePip();
+    setImmersive(!document.body.classList.contains('immersive'));
+  },
+  pip: () => (pipWin ? closePip() : openPip()),
   disconnect: () => disconnect(),
   keyboard: () => {
     if (!session) return;
@@ -602,6 +611,7 @@ $('menuBackdrop').addEventListener('pointerdown', (e) => {
     e.preventDefault();
     longPressed = false;
     timer = window.setTimeout(() => {
+      if (pipWin) return; // 小窗里没有完整菜单，用主页面的工具栏
       longPressed = true;
       navigator.vibrate?.(15);
       setMenu(true);
@@ -624,6 +634,115 @@ $('menuBackdrop').addEventListener('pointerdown', (e) => {
 document.addEventListener('fullscreenchange', () => {
   if (!document.fullscreenElement && !isTouchDevice) document.body.classList.remove('immersive');
 });
+
+// ---------- 小窗：把画面和三键导航栏移到一个独立窗口 ----------
+// Chrome / Edge 116+ 用 Document Picture-in-Picture（始终置顶）；其他浏览器退回普通弹出窗口。
+// 元素是直接移动过去的（事件监听、解码器、canvas 上下文都保留），关闭小窗时再移回来。
+type DocPip = { requestWindow(o: { width: number; height: number }): Promise<Window> };
+const docPip = (window as unknown as { documentPictureInPicture?: DocPip }).documentPictureInPicture;
+const pipHolder = $('pipHolder');
+const navbarEl = $('navbar');
+const PIP_BAR = 40; // 小窗底部导航栏高度
+let pipWin: Window | null = null;
+if (isTouchDevice) $('pipBtn').hidden = true; // 移动端浏览器不支持小窗
+
+function copyStyles(target: Document) {
+  for (const sheet of Array.from(document.styleSheets)) {
+    try {
+      const style = target.createElement('style');
+      style.textContent = Array.from(sheet.cssRules, (r) => r.cssText).join('\n');
+      target.head.appendChild(style);
+    } catch {
+      if (!sheet.href) continue;
+      const link = target.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = sheet.href;
+      target.head.appendChild(link);
+    }
+  }
+}
+
+/** 按画面比例算小窗的初始大小（内容区） */
+function pipSize() {
+  const aw = Number(screenWrap.style.getPropertyValue('--arw')) || 9;
+  const ah = Number(screenWrap.style.getPropertyValue('--arh')) || 20;
+  let h = Math.min(screen.availHeight * 0.8, 860) - PIP_BAR;
+  let w = (h * aw) / ah;
+  const maxW = Math.min(screen.availWidth * 0.6, 1100);
+  if (w > maxW) {
+    w = maxW;
+    h = (w * ah) / aw;
+  }
+  return { width: Math.round(w), height: Math.round(h + PIP_BAR) };
+}
+
+/** 手机横竖屏切换时尝试同步翻转小窗（浏览器可能要求用户手势，失败就保持原样，画面会自动留黑边） */
+function fitPipToVideo(w: number, h: number) {
+  const win = pipWin;
+  if (!win) return;
+  const iw = win.innerWidth;
+  const ih = win.innerHeight - PIP_BAR;
+  if (w > h === iw > ih) return;
+  const long = Math.max(iw, ih);
+  const short = Math.round((long * Math.min(w, h)) / Math.max(w, h));
+  const [tw, th] = w > h ? [long, short] : [short, long];
+  try {
+    win.resizeTo(tw + (win.outerWidth - iw), th + PIP_BAR + (win.outerHeight - win.innerHeight));
+  } catch {
+    /* ignore */
+  }
+}
+
+async function openPip() {
+  if (pipWin) return pipWin.focus();
+  if (document.body.classList.contains('immersive')) setImmersive(false);
+  const size = pipSize();
+  let win: Window | null;
+  if (docPip) {
+    try {
+      win = await docPip.requestWindow(size);
+    } catch (e) {
+      return toast(`无法打开小窗：${(e as Error).message}`);
+    }
+  } else {
+    win = window.open('', 'miscreen-pip', `popup,width=${size.width},height=${size.height}`);
+    if (!win) return toast('弹出窗口被浏览器拦截，请允许本站弹出窗口');
+    win.document.body.replaceChildren();
+  }
+  pipWin = win;
+  const d = win.document;
+  d.title = `MiScreen · ${statsEl.querySelector('[data-k="device"]')?.textContent || ''}`;
+  copyStyles(d);
+  d.body.className = 'pip';
+  d.body.append(screenWrap, navbarEl);
+  pipHolder.hidden = false;
+  $('pipBtn').classList.add('on');
+  session?.video.setWindow(win);
+  const back = () => restorePip(win);
+  win.addEventListener('pagehide', back, { once: true });
+  win.addEventListener('unload', back, { once: true });
+}
+
+/** 把画面移回主页面 */
+function restorePip(win: Window) {
+  if (pipWin !== win) return;
+  pipWin = null;
+  session?.input.releaseAll();
+  pipHolder.before(screenWrap);
+  $('menuBackdrop').after(navbarEl);
+  pipHolder.hidden = true;
+  $('pipBtn').classList.remove('on');
+  session?.video.setWindow(window);
+}
+
+function closePip() {
+  const win = pipWin;
+  if (!win) return;
+  restorePip(win);
+  win.close();
+}
+$('pipReturn').addEventListener('click', closePip);
+window.addEventListener('pagehide', closePip);
 
 refreshDevices();
 setInterval(() => {

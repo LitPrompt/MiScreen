@@ -65,15 +65,19 @@ export class InputHandler {
   }
 
   get focused() {
-    return document.activeElement === this.ime;
+    return this.ime.ownerDocument.activeElement === this.ime;
   }
 
   private pos(e: { clientX: number; clientY: number }): Position | null {
     if (!this.videoW || !this.videoH) return null;
     const r = this.surface.getBoundingClientRect();
     if (!r.width || !r.height) return null;
-    const x = ((e.clientX - r.left) / r.width) * this.videoW;
-    const y = ((e.clientY - r.top) / r.height) * this.videoH;
+    // canvas 使用 object-fit: contain，窗口比例与画面不一致时会有黑边，要扣掉
+    const scale = Math.min(r.width / this.videoW, r.height / this.videoH);
+    const cw = this.videoW * scale;
+    const ch = this.videoH * scale;
+    const x = ((e.clientX - r.left - (r.width - cw) / 2) / cw) * this.videoW;
+    const y = ((e.clientY - r.top - (r.height - ch) / 2) / ch) * this.videoH;
     return {
       x: Math.min(Math.max(x, 0), this.videoW - 1),
       y: Math.min(Math.max(y, 0), this.videoH - 1),

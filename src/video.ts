@@ -21,6 +21,8 @@ export class VideoPlayer {
   private needKey = true;
   private latest: VideoFrame | null = null;
   private raf = 0;
+  /** 驱动绘制的窗口：画面移到小窗后改用小窗的 requestAnimationFrame（主窗口最小化时它会被暂停） */
+  private win: Window = window;
   private ctx: CanvasRenderingContext2D;
   private frames = 0;
   private bytes = 0;
@@ -33,11 +35,23 @@ export class VideoPlayer {
 
   constructor(private canvas: HTMLCanvasElement) {
     this.ctx = canvas.getContext('2d', { alpha: false, desynchronized: true })!;
-    const loop = () => {
-      this.raf = requestAnimationFrame(loop);
-      this.draw();
-    };
-    this.raf = requestAnimationFrame(loop);
+    this.raf = this.win.requestAnimationFrame(this.loop);
+  }
+
+  private loop = () => {
+    this.raf = this.win.requestAnimationFrame(this.loop);
+    this.draw();
+  };
+
+  setWindow(win: Window) {
+    if (win === this.win) return;
+    try {
+      this.win.cancelAnimationFrame(this.raf);
+    } catch {
+      /* 旧窗口可能已关闭 */
+    }
+    this.win = win;
+    this.raf = win.requestAnimationFrame(this.loop);
   }
 
   setCodec(codec: string) {
@@ -165,6 +179,10 @@ export class VideoPlayer {
 
   destroy() {
     this.reset();
-    cancelAnimationFrame(this.raf);
+    try {
+      this.win.cancelAnimationFrame(this.raf);
+    } catch {
+      /* ignore */
+    }
   }
 }
