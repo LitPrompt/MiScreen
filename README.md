@@ -83,7 +83,7 @@ sudo ./fnos/build.sh        # 生成 fnos/out/miscreen.fpk
 脚本会先构建 Docker 镜像，把镜像文件系统导出为 `rootfs.tar.gz` 放进安装包。安装时应用中心用包里的 `Dockerfile`（`FROM scratch` + `ADD`）离线构建镜像，不需要联网。
 
 - 安装：应用中心 →「手动安装」选择 fpk，或 `sudo appcenter-cli install-fpk miscreen.fpk`
-- 访问：桌面图标，或 `https://<飞牛地址>:18443`（自签名证书，首次需手动信任）
+- 访问：飞牛桌面图标会在飞牛的窗口里打开（经飞牛网关 `/app/miscreen/`，需要登录飞牛）。**飞牛必须用 HTTPS 打开**（如 `https://<飞牛地址>:5667`），否则浏览器在 HTTP 页面里禁用视频解码。也可以直接访问 `https://<飞牛地址>:18443`（自签名证书，首次需手动信任）
 - 数据：adb 授权密钥和证书在 `/var/apps/miscreen/shares/miscreen/data`，卸载后保留
 - 容器名同为 `miscreen`、端口 18080/18443，不要和上面的 docker compose 部署同时运行
 - 升级：改 `fnos/pkg/manifest` 里的 `version` 后重新打包安装

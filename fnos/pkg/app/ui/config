@@ -2,12 +2,19 @@
     ".url": {
         "miscreen.Application": {
             "title": "MiScreen",
+            "desc": "手机投屏",
             "icon": "images/icon_{0}.png",
-            "type": "url",
-            "protocol": "https",
-            "port": "18443",
-            "url": "/",
-            "allUsers": false
+            "type": "iframe",
+            "protocol": "",
+            "gatewayPrefix": "/app/miscreen",
+            "gatewaySocket": "app.sock",
+            "url": "/app/miscreen/",
+            "width": 1000,
+            "height": 820,
+            "allUsers": false,
+            "control": {
+                "accessPerm": "readonly"
+            }
         }
     }
 }

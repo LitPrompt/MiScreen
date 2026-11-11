@@ -13,7 +13,11 @@ services:
       - /dev/bus/usb:/dev/bus/usb
       # adb 授权密钥和证书，卸载应用后保留
       - /var/apps/miscreen/shares/miscreen/data:/data
+      # 飞牛网关：服务在 target/app.sock 上监听，桌面窗口经 /app/miscreen/ 访问
+      - /var/apps/miscreen/target:/fnos
     device_cgroup_rules:
       - "c 189:* rmw"
     environment:
       TZ: Asia/Shanghai
+      UNIX_SOCKET: /fnos/app.sock
+      BASE_PATH: /app/miscreen

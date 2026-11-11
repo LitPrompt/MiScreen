@@ -213,17 +213,21 @@ function setStat(k: string, v: string) {
 
 // ---------- 环境检查 ----------
 if (!window.isSecureContext || !('VideoDecoder' in window)) {
-  const httpsUrl = `https://${location.hostname}:8443${location.pathname}`;
+  // 在飞牛桌面窗口里（经网关访问）时，要用 https 打开飞牛本身；直接访问时用本服务的 https 端口
+  const viaGateway = location.pathname.startsWith('/app/');
+  const httpsUrl = viaGateway ? `https://${location.hostname}:5667/` : `https://${location.hostname}:8443${location.pathname}`;
   banner.hidden = false;
   banner.innerHTML = !window.isSecureContext
-    ? `当前页面不是安全上下文（HTTP 且非 localhost），浏览器禁用了 WebCodecs 解码。请改用 <a href="${httpsUrl}">${httpsUrl}</a> 访问（自签名证书需手动信任一次），或用反向代理配置正式证书。`
+    ? viaGateway
+      ? `飞牛当前是通过 HTTP 访问的，浏览器在 HTTP 页面里禁用了视频解码（WebCodecs）。请改用 HTTPS 打开飞牛：<a href="${httpsUrl}" target="_top">${httpsUrl}</a>，再从桌面打开 MiScreen。`
+      : `当前页面不是安全上下文（HTTP 且非 localhost），浏览器禁用了 WebCodecs 解码。请改用 <a href="${httpsUrl}">${httpsUrl}</a> 访问（自签名证书需手动信任一次），或用反向代理配置正式证书。`
     : '当前浏览器不支持 WebCodecs，请使用最新版 Chrome / Edge / Safari 17+ / Firefox 130+。';
 }
 
 // ---------- 设备列表 ----------
 async function refreshDevices() {
   try {
-    const res = await fetch('/api/devices');
+    const res = await fetch('api/devices');
     const { devices, error } = await res.json();
     if (error) throw new Error(error);
     deviceSel.innerHTML = '';
@@ -256,7 +260,7 @@ $('refresh').addEventListener('click', refreshDevices);
 $('tcpConnect').addEventListener('click', async () => {
   const address = $<HTMLInputElement>('tcpAddr').value.trim();
   if (!address) return;
-  const res = await fetch('/api/adb/connect', {
+  const res = await fetch('api/adb/connect', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify({ address }),
@@ -327,7 +331,10 @@ function connect() {
   audio?.setLatency(settings.audioBuffer);
   audio?.setVolume(muted ? 0 : settings.volume);
 
-  const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws?${params}`);
+  // 相对当前页面的地址，兼容飞牛网关的 /app/miscreen/ 前缀
+  const wsUrl = new URL(`ws?${params}`, location.href);
+  wsUrl.protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const ws = new WebSocket(wsUrl);
   ws.binaryType = 'arraybuffer';
   const video = new VideoPlayer(canvas);
   const input = new InputHandler(canvas, send);
@@ -407,7 +414,7 @@ async function pollDeviceStatus(serial: string) {
   if (statusBusy) return;
   statusBusy = true;
   try {
-    const res = await fetch(`/api/devices/${encodeURIComponent(serial)}/status`);
+    const res = await fetch(`api/devices/${encodeURIComponent(serial)}/status`);
     if (!res.ok) return;
     const st: DeviceStatus = await res.json();
     if (!session) return;
@@ -698,7 +705,7 @@ async function openPip() {
   if (document.body.classList.contains('immersive')) setImmersive(false);
   const size = pipSize();
   let win: Window | null;
-  if (docPip) {
+  if (docPip && window === window.top) {
     try {
       win = await docPip.requestWindow(size);
     } catch (e) {

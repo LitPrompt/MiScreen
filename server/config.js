@@ -25,5 +25,8 @@ export const config = {
   authUser: env.AUTH_USER || '',
   authPassword: env.AUTH_PASSWORD || '',
   // WebSocket 发送缓冲超过该值时丢弃视频帧并请求关键帧，避免延迟累积
+  // 额外监听的 unix socket（飞牛网关 app.sock），以及网关转发时可能带上的路径前缀
+  unixSocket: env.UNIX_SOCKET || '',
+  basePath: (env.BASE_PATH || '').replace(/\/+$/, ''),
   maxWsBuffer: Number(env.MAX_WS_BUFFER || 4 * 1024 * 1024),
 };

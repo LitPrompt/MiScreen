@@ -115,12 +115,27 @@ function serveStatic(req, res, url) {
   fs.createReadStream(file).pipe(res);
 }
 
+/** 去掉网关路径前缀（/app/miscreen/api/... → /api/...），没有前缀时原样返回 */
+function parseUrl(req) {
+  const url = new URL(req.url, 'http://x');
+  const base = config.basePath;
+  if (base && (url.pathname === base || url.pathname.startsWith(base + '/'))) {
+    url.pathname = url.pathname.slice(base.length) || '/';
+  }
+  return url;
+}
+
 function onRequest(req, res) {
   if (!checkAuth(req)) {
     res.writeHead(401, { 'www-authenticate': 'Basic realm="MiScreen"' }).end();
     return;
   }
-  const url = new URL(req.url, 'http://x');
+  // 前端使用相对路径，入口必须以 / 结尾
+  if (config.basePath && req.url.split('?')[0] === config.basePath) {
+    res.writeHead(301, { location: config.basePath + '/' }).end();
+    return;
+  }
+  const url = parseUrl(req);
   if (url.pathname.startsWith('/api/')) handleApi(req, res, url);
   else serveStatic(req, res, url);
 }
@@ -129,7 +144,7 @@ function onRequest(req, res) {
 const sessions = new Map(); // serial -> ScrcpySession
 
 function onWsConnection(ws, req) {
-  const url = new URL(req.url, 'http://x');
+  const url = parseUrl(req);
   const serial = url.searchParams.get('serial');
   const sendJsonMsg = (o) => ws.readyState === ws.OPEN && ws.send(JSON.stringify(o));
 
@@ -215,7 +230,7 @@ function attachWs(server) {
   const wss = new WebSocketServer({ noServer: true, perMessageDeflate: false });
   wss.on('connection', onWsConnection);
   server.on('upgrade', (req, socket, head) => {
-    const url = new URL(req.url, 'http://x');
+    const url = parseUrl(req);
     if (url.pathname !== '/ws' || !checkAuth(req)) {
       socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
       socket.destroy();
@@ -263,6 +278,21 @@ async function main() {
       );
     } catch (e) {
       console.warn(`HTTPS 未启用: ${e.message}`);
+    }
+  }
+
+  if (config.unixSocket) {
+    // 飞牛网关通过 unix socket 转发 /app/miscreen/ 的请求（含 WebSocket）
+    try {
+      fs.rmSync(config.unixSocket, { force: true });
+      const sockServer = http.createServer(onRequest);
+      attachWs(sockServer);
+      sockServer.listen(config.unixSocket, () => {
+        fs.chmodSync(config.unixSocket, 0o666);
+        console.log(`UNIX  ${config.unixSocket}${config.basePath ? `（前缀 ${config.basePath}）` : ''}`);
+      });
+    } catch (e) {
+      console.warn(`unix socket 未启用: ${e.message}`);
     }
   }
 
