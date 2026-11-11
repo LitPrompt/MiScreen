@@ -365,7 +365,7 @@ body.immersive .stage {
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 body.immersive .screen-wrap { border-radius: 0; box-shadow: none; }
-.navbar, .nav-pill { display: none; }
+.navbar, .nav-show { display: none; }
 .menu-backdrop { position: fixed; inset: 0; z-index: 30; background: rgb(0 0 0 / .35); touch-action: none; }
 
 @media (pointer: fine) {
@@ -434,44 +434,39 @@ body.immersive .screen-wrap { border-radius: 0; box-shadow: none; }
   }
   body.immersive .navbar button:active { background: rgb(255 255 255 / .12); }
 
-  /* 手势横条模式：三键平时收起，点横条后从底部滑出 */
-  body.immersive.nav-pill-mode .navbar {
-    transform: translateY(100%);
-    opacity: 0;
-    pointer-events: none;
-    transition: transform .2s ease, opacity .2s ease;
+  /* 三键可收起：最右侧的小按钮收起，收起后右下角留一个小圆按钮展开 */
+  body.immersive .navbar { transition: transform .2s ease, opacity .2s ease; }
+  body.immersive .navbar .nav-hide {
+    position: absolute;
+    right: 6px;
+    top: 6px;
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    color: rgb(255 255 255 / .7);
   }
-  body.immersive.nav-pill-mode.nav-open .navbar,
-  body.immersive.nav-pill-mode.menu-open .navbar { transform: none; opacity: 1; pointer-events: auto; }
-  body.immersive.nav-pill-mode .nav-pill {
+  body.immersive.nav-hidden .navbar { transform: translateY(100%); opacity: 0; pointer-events: none; }
+  body.immersive.nav-hidden .nav-show {
     display: grid;
     place-items: center;
     position: fixed;
     z-index: 26;
-    left: 50%;
+    right: 12px;
     /* 留在系统横条（安全区）上方，避免触发 iPhone 上滑回桌面 */
-    bottom: calc(env(safe-area-inset-bottom) + 4px);
-    width: 180px;
-    height: 30px;
-    transform: translateX(-50%);
+    bottom: calc(env(safe-area-inset-bottom) + 12px);
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid rgb(255 255 255 / .15);
+    background: rgb(0 0 0 / .35);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #fff;
     touch-action: none;
-    user-select: none;
-    -webkit-user-select: none;
     -webkit-touch-callout: none;
-    transition: opacity .2s;
   }
-  body.immersive.nav-pill-mode.nav-open .nav-pill,
-  body.immersive.nav-pill-mode.menu-open .nav-pill { opacity: 0; pointer-events: none; }
-  .nav-pill i {
-    width: 120px;
-    height: 5px;
-    border-radius: 3px;
-    background: rgb(255 255 255 / .75);
-    box-shadow: 0 0 0 1px rgb(0 0 0 / .3), 0 1px 6px rgb(0 0 0 / .45);
-    transform: translateY(calc(var(--dy, 0px) / 3));
-    transition: width .15s, background .15s;
-  }
-  .nav-pill.active i { width: 140px; background: #fff; transition: width .15s, background .15s; }
+  body.immersive.nav-hidden.menu-open .nav-show { display: none; }
   body.immersive .navbar svg { width: 22px; height: 22px; }
 
   body.immersive.menu-open .toolbar {

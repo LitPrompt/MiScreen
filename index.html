@@ -73,9 +73,10 @@
           <button data-nav="back" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M17 5v14L6 12z" /></svg></button>
           <button data-nav="home" aria-label="主页"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" /></svg></button>
           <button data-nav="recents" aria-label="多任务"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1" /></svg></button>
+          <button data-nav="hidenav" class="nav-hide" aria-label="收起导航按钮"><svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" /></svg></button>
         </nav>
 
-        <div class="nav-pill" id="navPill" role="button" aria-label="手势横条：上滑主页，上滑停顿多任务，左右滑返回，点按显示按钮，长按菜单"><i></i></div>
+        <button class="nav-show" id="navShow" aria-label="显示导航按钮"><svg viewBox="0 0 24 24"><path d="M6 15l6-6 6 6" /></svg></button>
 
         <nav class="toolbar" aria-label="设备操作">
           <button data-action="back" title="返回"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" /></svg></button>
@@ -95,7 +96,6 @@
           <button data-action="mute" title="本地静音"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM16 9l5 6M21 9l-5 6" /></svg></button>
           <button data-action="screenshot" title="截图"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg></button>
           <button data-action="pip" id="pipBtn" title="小窗（置顶独立窗口）"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" /><rect x="12" y="11" width="7" height="6" rx="1" /></svg></button>
-          <button data-action="navmode" class="menu-only" title="导航方式" data-label="常驻三键"><svg viewBox="0 0 24 24"><rect x="3" y="15" width="18" height="6" rx="2" /><path d="M8 9h8M12 3v10" /></svg></button>
           <button data-action="fill" class="menu-only" title="铺满屏幕" data-label="铺满屏幕"><svg viewBox="0 0 24 24"><path d="M9 4H4v5M15 4h5v5M9 20H4v-5M15 20h5v-5M9 9l-5-5M15 9l5-5M9 15l-5 5M15 15l5 5" /></svg></button>
           <button data-action="disconnect" class="menu-only" title="断开连接"><svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l-5-5 5-5M5 12h11" /></svg></button>
           <button data-action="fullscreen" title="全屏" data-label="退出全屏"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg></button>

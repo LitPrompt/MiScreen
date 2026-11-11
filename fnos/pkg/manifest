@@ -1,5 +1,5 @@
 appname=miscreen
-version=1.0.6
+version=1.0.7
 display_name=MiScreen 手机投屏
 desc=在浏览器里查看和操控 USB 连接的安卓手机（基于 scrcpy），支持音视频、触控、键盘和中文输入、剪贴板同步、小窗模式。首次连接需在手机上允许 USB 调试。
 platform=x86
@@ -12,4 +12,4 @@ checkport=true
 desktop_uidir=ui
 desktop_applaunchname=miscreen.Application
 ctl_stop=true
-changelog=移动端手势横条导航（上滑主页、停顿多任务、左右滑返回、点按展开三键）；系统返回手势控制手机返回
+changelog=移动端去掉手势横条，三键导航可收起和展开；系统返回手势控制手机返回

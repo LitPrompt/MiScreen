@@ -36,7 +36,7 @@ interface Settings {
   showTouches: boolean;
   powerOffOnClose: boolean;
   fill: boolean; // 移动端全屏时适度放大铺满，减少两侧黑边
-  navPill: boolean; // 移动端导航：true=手势小横条，false=常驻三键
+  navHidden: boolean; // 移动端三键导航栏是否收起
 }
 
 const DEFAULTS: Settings = {
@@ -56,7 +56,7 @@ const DEFAULTS: Settings = {
   showTouches: false,
   powerOffOnClose: false,
   fill: true,
-  navPill: true,
+  navHidden: false,
 };
 
 function loadSettings(): Settings {
@@ -578,11 +578,10 @@ const actions: Record<string, () => void> = {
     setImmersive(!document.body.classList.contains('immersive'));
   },
   pip: () => (pipWin ? closePip() : openPip()),
-  navmode: () => {
-    settings.navPill = !settings.navPill;
+  hidenav: () => {
+    settings.navHidden = true;
     saveSettings();
-    applyNavMode();
-    toast(settings.navPill ? '手势横条：上滑主页 · 上滑停顿多任务 · 左右滑返回 · 点按显示按钮' : '常驻三键导航', 3000);
+    applyNavHidden();
   },
   fill: () => {
     settings.fill = !settings.fill;
@@ -652,7 +651,6 @@ $('clipCopy').addEventListener('click', async () => {
 // ---------- 移动端：导航栏 + 弹出菜单 ----------
 function setMenu(open: boolean) {
   document.body.classList.toggle('menu-open', open);
-  if (!open) document.body.classList.remove('nav-open');
   $('menuBackdrop').hidden = !open;
 }
 $('menuBackdrop').addEventListener('pointerdown', (e) => {
@@ -668,7 +666,6 @@ $('menuBackdrop').addEventListener('pointerdown', (e) => {
   bar.addEventListener('pointerdown', (e) => {
     e.preventDefault();
     longPressed = false;
-    keepNavOpen();
     timer = window.setTimeout(() => {
       if (pipWin) return; // 小窗里没有完整菜单，用主页面的工具栏
       longPressed = true;
@@ -689,92 +686,18 @@ $('menuBackdrop').addEventListener('pointerdown', (e) => {
   );
 })();
 
-// ---------- 手势横条（移动端默认）----------
-// 放在系统横条上方，避开 iPhone 底部上滑回桌面、安卓底部手势：
-// 上滑=主页，上滑后停顿=多任务，左右滑=返回，点按=展开三键（3 秒后收起），长按=完整菜单
-const navPill = $('navPill');
-const navModeBtn = document.querySelector<HTMLButtonElement>('[data-action="navmode"]')!;
-let navCloseTimer = 0;
-function applyNavMode() {
-  document.body.classList.toggle('nav-pill-mode', settings.navPill);
-  document.body.classList.remove('nav-open');
-  navModeBtn.classList.toggle('on', settings.navPill);
-  navModeBtn.dataset.label = settings.navPill ? '常驻三键' : '手势横条';
+// ---------- 移动端三键：可收起，收起后右下角留一个小按钮用来展开 ----------
+function applyNavHidden() {
+  document.body.classList.toggle('nav-hidden', settings.navHidden);
 }
-function keepNavOpen() {
-  if (!settings.navPill) return;
-  document.body.classList.add('nav-open');
-  clearTimeout(navCloseTimer);
-  navCloseTimer = window.setTimeout(() => {
-    if (!document.body.classList.contains('menu-open')) document.body.classList.remove('nav-open');
-  }, 3000);
-}
-applyNavMode();
-
-(function initNavPill() {
-  const SWIPE = 36; // 触发滑动的最小距离（px）
-  const HOLD = 350; // 上滑后停顿多久算多任务（ms）
-  let x0 = 0;
-  let y0 = 0;
-  let mode: 'idle' | 'pending' | 'up' | 'side' | 'done' = 'idle';
-  let longTimer = 0;
-  let holdTimer = 0;
-  const vibrate = () => navigator.vibrate?.(12);
-  const reset = () => {
-    clearTimeout(longTimer);
-    clearTimeout(holdTimer);
-    mode = 'idle';
-    navPill.classList.remove('active');
-    navPill.style.removeProperty('--dy');
-  };
-  navPill.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    session?.audio?.resume();
-    navPill.setPointerCapture(e.pointerId);
-    x0 = e.clientX;
-    y0 = e.clientY;
-    mode = 'pending';
-    navPill.classList.add('active');
-    longTimer = window.setTimeout(() => {
-      if (mode !== 'pending') return;
-      mode = 'done';
-      vibrate();
-      setMenu(true);
-    }, 500);
-  });
-  navPill.addEventListener('pointermove', (e) => {
-    if (mode === 'idle' || mode === 'done') return;
-    const dx = e.clientX - x0;
-    const dy = e.clientY - y0;
-    if (mode === 'pending' && Math.hypot(dx, dy) > 10) {
-      clearTimeout(longTimer);
-      mode = Math.abs(dy) > Math.abs(dx) ? (dy < 0 ? 'up' : 'done') : 'side';
-    }
-    if (mode === 'up') {
-      navPill.style.setProperty('--dy', `${Math.max(dy, -60)}px`);
-      // 上滑过阈值后停住不动 → 多任务
-      clearTimeout(holdTimer);
-      if (dy < -SWIPE) {
-        holdTimer = window.setTimeout(() => {
-          if (mode !== 'up') return;
-          mode = 'done';
-          vibrate();
-          actions.recents();
-        }, HOLD);
-      }
-    }
-  });
-  navPill.addEventListener('pointerup', (e) => {
-    const dx = e.clientX - x0;
-    const dy = e.clientY - y0;
-    if (mode === 'pending') keepNavOpen();
-    else if (mode === 'up' && dy < -SWIPE) actions.home();
-    else if (mode === 'side' && Math.abs(dx) > SWIPE) actions.back();
-    reset();
-  });
-  navPill.addEventListener('pointercancel', reset);
-  navPill.addEventListener('contextmenu', (e) => e.preventDefault());
-})();
+applyNavHidden();
+$('navShow').addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  session?.audio?.resume();
+  settings.navHidden = false;
+  saveSettings();
+  applyNavHidden();
+});
 
 // ---------- 系统返回手势 → 设备返回 ----------
 // 连接后在浏览器历史里压入一条记录：iPhone 左边缘右滑 / 安卓返回键触发后退时不离开页面，而是让手机返回
