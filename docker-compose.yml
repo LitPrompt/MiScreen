@@ -8,9 +8,10 @@ services:
     image: miscreen:latest
     container_name: miscreen
     restart: unless-stopped
+    # 宿主机端口可在 .env 中用 HTTP_PORT / HTTPS_PORT 修改
     ports:
-      - "8080:8080"   # HTTP（仅 localhost 可用 WebCodecs）
-      - "8443:8443"   # HTTPS（自签名证书，局域网访问用这个）
+      - "${HTTP_PORT:-8080}:8080"   # HTTP（仅 localhost 可用 WebCodecs）
+      - "${HTTPS_PORT:-8443}:8443"   # HTTPS（自签名证书，局域网访问用这个）
     volumes:
       # 挂载整个 USB 总线 + cgroup 规则：手机拔插后无需重启容器
       - /dev/bus/usb:/dev/bus/usb
