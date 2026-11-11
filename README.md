@@ -2,6 +2,10 @@
 
 在浏览器里实时控制 Android 设备（类似 [scrcpy](https://github.com/Genymobile/scrcpy) 的体验），支持音视频传输，画质、码率、帧率、音频编码都可以在页面上调整。
 
+![MiScreen 操作演示](docs/demo.gif)
+
+> 演示：连接设备 → 解锁滑动 → 小窗模式 → 文件管理（960px / 12fps，约 30 秒）
+
 ## 原理
 
 ```
