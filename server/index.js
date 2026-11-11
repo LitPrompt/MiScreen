@@ -7,6 +7,7 @@ import { WebSocketServer } from 'ws';
 import { config } from './config.js';
 import { listDevices, getDeviceInfo, getDeviceStatus, connectTcp, startServer } from './adb.js';
 import { ScrcpySession, sanitizeOptions } from './scrcpy.js';
+import * as files from './files.js';
 
 // ---------- 浏览器 <-> 服务端 二进制帧格式 ----------
 // [0]    kind   1=视频 2=音频
@@ -85,13 +86,38 @@ async function handleApi(req, res, url) {
     if (req.method === 'GET' && m) {
       return sendJson(res, 200, await getDeviceInfo(decodeURIComponent(m[1])));
     }
+    // ---------- 文件管理 ----------
+    const f = url.pathname.match(/^\/api\/devices\/([^/]+)\/files(?:\/(list|storage|download|upload|mkdir|rename|delete))?$/);
+    if (f) {
+      const serial = decodeURIComponent(f[1]);
+      const op = f[2] || 'list';
+      const q = url.searchParams;
+      if (req.method === 'GET' && op === 'list') return sendJson(res, 200, await files.listDir(serial, q.get('path') || '/sdcard'));
+      if (req.method === 'GET' && op === 'storage') return sendJson(res, 200, await files.storageInfo(serial));
+      if (req.method === 'GET' && op === 'download') return await files.download(serial, q.get('path'), res, { inline: q.get('inline') === '1' });
+      if (req.method === 'POST' && op === 'upload') return sendJson(res, 200, await files.upload(serial, q.get('dir'), q.get('name'), req));
+      if (req.method === 'POST' && op === 'mkdir') {
+        await files.makeDir(serial, (await readBody(req)).path);
+        return sendJson(res, 200, { ok: true });
+      }
+      if (req.method === 'POST' && op === 'rename') {
+        const b = await readBody(req);
+        await files.rename(serial, b.from, b.to);
+        return sendJson(res, 200, { ok: true });
+      }
+      if (req.method === 'POST' && op === 'delete') {
+        await files.remove(serial, (await readBody(req)).paths);
+        return sendJson(res, 200, { ok: true });
+      }
+    }
     if (req.method === 'POST' && url.pathname === '/api/adb/connect') {
       const { address } = await readBody(req);
       return sendJson(res, 200, { message: await connectTcp(String(address || '')) });
     }
     sendJson(res, 404, { error: 'not found' });
   } catch (e) {
-    sendJson(res, 500, { error: e.message });
+    if (res.headersSent) res.destroy();
+    else sendJson(res, 500, { error: e.message });
   }
 }
 

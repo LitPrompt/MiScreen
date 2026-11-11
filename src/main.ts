@@ -2,6 +2,7 @@ import './style.css';
 import { VideoPlayer } from './video';
 import { AudioPlayer } from './audio';
 import { InputHandler } from './input';
+import { FileManager } from './files';
 import { Keycode, MsgType, backOrScreenOn, KeyAction, getClipboard, setDisplayPower, simple } from './protocol';
 
 // ---------- DOM ----------
@@ -195,6 +196,10 @@ function setStatus(state: 'idle' | 'connecting' | 'connected' | 'error', text: s
 let toastTimer = 0;
 function toast(msg: string, ms = 4000) {
   const t = $('toast');
+  // 模态对话框在顶层，提示要放进对话框里才看得见
+  const dlg = document.querySelector<HTMLDialogElement>('dialog[open]');
+  const host = dlg ?? document.body;
+  if (t.parentElement !== host) host.appendChild(t);
   t.textContent = msg;
   t.hidden = false;
   clearTimeout(toastTimer);
@@ -574,6 +579,7 @@ const actions: Record<string, () => void> = {
     setImmersive(!document.body.classList.contains('immersive'));
   },
   pip: () => (pipWin ? closePip() : openPip()),
+  files: () => files.open(deviceSel.value),
   hidenav: () => {
     settings.navHidden = true;
     saveSettings();
@@ -598,6 +604,25 @@ document.querySelectorAll<HTMLButtonElement>('.toolbar button').forEach((b) =>
     if (session && !isTouchDevice && b.dataset.action !== 'keyboard') session.input.focus();
   }),
 );
+
+// ---------- 文件管理 ----------
+const files = new FileManager(toast);
+$('openFiles').addEventListener('click', () => files.open(deviceSel.value));
+// 把电脑上的文件拖到手机画面上：传到手机的 Download 文件夹（和 scrcpy 一样）
+screenWrap.addEventListener('dragover', (e) => {
+  if (!e.dataTransfer?.types.includes('Files')) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'copy';
+  screenWrap.classList.add('drop-target');
+});
+screenWrap.addEventListener('dragleave', () => screenWrap.classList.remove('drop-target'));
+screenWrap.addEventListener('drop', (e) => {
+  screenWrap.classList.remove('drop-target');
+  const list = [...(e.dataTransfer?.files || [])];
+  if (!list.length) return;
+  e.preventDefault();
+  files.upload(list, '/sdcard/Download', deviceSel.value);
+});
 
 // ---------- 剪贴板 ----------
 $('clipSend').addEventListener('click', () => {

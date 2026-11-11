@@ -559,3 +559,185 @@ body.pip .navbar button:active { background: rgb(255 255 255 / .18); }
   body.immersive .toolbar { max-height: calc(100vh - 12px); }
   body.immersive .screen-wrap { width: min(calc(100vw - 120px), calc(100dvh * var(--arw) / var(--arh))); }
 }
+
+/* ---------- 文件管理 ---------- */
+.wide-btn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 9px 12px; }
+.screen-wrap.drop-target { box-shadow: 0 0 0 3px var(--accent), 0 24px 60px rgb(0 0 0 / .4); }
+.files-dlg {
+  width: min(960px, calc(100vw - 32px));
+  height: min(720px, calc(100dvh - 48px));
+  max-width: none;
+  max-height: none;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 30px 80px rgb(0 0 0 / .45);
+  overflow: hidden;
+}
+.files-dlg::backdrop { background: rgb(0 0 0 / .5); backdrop-filter: blur(2px); }
+.files-dlg .toast { position: fixed; }
+.files {
+  position: relative;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 168px 1fr;
+  grid-template-rows: auto auto auto 1fr auto;
+  grid-template-areas: 'head head' 'bar bar' 'places opts' 'places list' 'places progress';
+}
+.files-head { grid-area: head; display: flex; align-items: center; gap: 12px; padding: 12px 12px 8px 18px; }
+.files-head h2 { margin: 0; font-size: 16px; }
+.files-storage { color: var(--muted); font-size: 12px; flex: 1; }
+.files-close { border: 0; background: transparent; }
+.files-bar {
+  grid-area: bar;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.files-crumbs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 3px 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.files-crumbs::-webkit-scrollbar { display: none; }
+.files-crumbs button { border: 0; background: transparent; padding: 3px 6px; border-radius: 6px; flex: none; }
+.files-crumbs button:hover { background: var(--surface-3); }
+.files-crumbs button:last-child { font-weight: 600; }
+.files-crumbs span { color: var(--muted); flex: none; }
+.files-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.files-upload svg { width: 18px; height: 18px; }
+.files-places {
+  grid-area: places;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 8px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+.files-places button { text-align: left; border: 0; background: transparent; padding: 7px 10px; border-radius: 8px; color: var(--muted); }
+.files-places button:hover { background: var(--surface-2); color: var(--text); }
+.files-places button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.files-opts { grid-area: opts; display: flex; align-items: center; gap: 12px; padding: 8px 14px; font-size: 13px; }
+.files-opts select { padding: 4px 8px; }
+.files-count { margin-left: auto; color: var(--muted); font-size: 12px; }
+.files-list { grid-area: list; overflow-y: auto; padding: 0 8px 8px; min-height: 0; outline: none; }
+.files-empty { padding: 48px 16px; text-align: center; color: var(--muted); }
+.file-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 7px 8px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.file-row:hover { background: var(--surface-2); }
+.file-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; background: var(--surface-2); color: var(--muted); flex: none; }
+.file-row.is-dir .file-icon { color: var(--accent); background: var(--accent-soft); }
+.file-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.file-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-meta { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.file-acts { display: flex; gap: 2px; flex: none; opacity: 0; transition: opacity .1s; }
+.file-row:hover .file-acts, .file-row:focus-within .file-acts { opacity: 1; }
+.file-acts button { width: 32px; height: 32px; padding: 0; display: grid; place-items: center; border: 0; background: transparent; color: var(--muted); border-radius: 8px; }
+.file-acts button:hover { background: var(--surface-3); color: var(--text); }
+.file-acts button[data-act='delete']:hover { color: var(--err); }
+.file-acts svg { width: 18px; height: 18px; }
+.files-progress {
+  grid-area: progress;
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 12px 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  overflow: hidden;
+}
+.files-progress span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.files-progress i { position: absolute; left: 0; bottom: 0; height: 3px; background: var(--accent); transition: width .2s; }
+.files-drop {
+  position: absolute;
+  inset: 8px;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  border: 2px dashed var(--accent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+  color: var(--accent);
+  font-size: 16px;
+  font-weight: 600;
+  pointer-events: none;
+}
+.files-preview {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  background: rgb(0 0 0 / .92);
+  color: #eee;
+}
+.preview-bar { display: flex; align-items: center; gap: 6px; padding: 10px 12px; }
+.preview-bar span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.preview-bar .icon-btn { background: transparent; border-color: transparent; color: #eee; }
+.preview-body { flex: 1; min-height: 0; display: grid; place-items: center; padding: 0 12px 12px; }
+.preview-body img, .preview-body video { max-width: 100%; max-height: 100%; object-fit: contain; }
+.preview-body audio { width: min(480px, 100%); }
+.preview-body pre {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: auto;
+  padding: 12px;
+  background: #111;
+  border-radius: 8px;
+  font: 12px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* 触屏 / 窄屏：全屏面板，常用目录变成横向滚动的标签，操作按钮常显 */
+@media (max-width: 700px), (pointer: coarse) {
+  .files-dlg { width: 100vw; height: 100dvh; border-radius: 0; border: 0; }
+  .files {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto 1fr auto;
+    grid-template-areas: 'head' 'bar' 'places' 'opts' 'list' 'progress';
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .files-places { flex-direction: row; border-right: 0; overflow-x: auto; scrollbar-width: none; padding: 8px 12px 0; }
+  .files-places::-webkit-scrollbar { display: none; }
+  .files-places button { flex: none; border: 1px solid var(--border); border-radius: 999px; padding: 4px 12px; }
+  .files-upload span { display: none; }
+  .file-acts { opacity: 1; }
+  .file-acts button { width: 34px; height: 34px; }
+}
