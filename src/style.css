@@ -384,22 +384,6 @@ body.immersive .screen-wrap { border-radius: 0; box-shadow: none; }
     width: min(100vw, calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * var(--arw) / var(--arh)));
   }
   body.immersive .toolbar { display: none; }
-  /* 铺满：画面区占满导航栏以上的全部空间，canvas 按 JS 算出的尺寸居中，超出部分裁掉 */
-  body.immersive.fill .screen-wrap {
-    flex: 1;
-    min-height: 0;
-    width: 100vw;
-    margin: 0;
-    aspect-ratio: auto;
-  }
-  body.immersive.fill canvas {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: var(--cw, 100%);
-    height: var(--ch, 100%);
-    transform: translate(-50%, -50%);
-  }
   body.immersive .navbar {
     display: flex;
     position: fixed;

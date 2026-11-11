@@ -35,7 +35,6 @@ interface Settings {
   screenOff: boolean;
   showTouches: boolean;
   powerOffOnClose: boolean;
-  fill: boolean; // 移动端全屏时适度放大铺满，减少两侧黑边
   navHidden: boolean; // 移动端三键导航栏是否收起
 }
 
@@ -55,7 +54,6 @@ const DEFAULTS: Settings = {
   screenOff: false,
   showTouches: false,
   powerOffOnClose: false,
-  fill: true,
   navHidden: false,
 };
 
@@ -291,7 +289,6 @@ const isTouchDevice = matchMedia('(pointer: coarse)').matches;
 /** 沉浸模式：画面铺满视口，工具栏在底部；同时尝试浏览器全屏（iPhone Safari 不支持时仍保留铺满效果） */
 function setImmersive(on: boolean) {
   document.body.classList.toggle('immersive', on);
-  requestAnimationFrame(layoutFill);
   if (!on) setMenu(false);
   if (on) document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {});
   else if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
@@ -363,7 +360,6 @@ function connect() {
     screenWrap.style.setProperty('--arh', String(h));
     screenWrap.classList.toggle('landscape', w > h);
     fitPipToVideo(w, h);
-    layoutFill();
   };
   if (audio) audio.onError = (m) => toast(m, 6000);
 
@@ -583,12 +579,6 @@ const actions: Record<string, () => void> = {
     saveSettings();
     applyNavHidden();
   },
-  fill: () => {
-    settings.fill = !settings.fill;
-    saveSettings();
-    applyFill();
-    toast(settings.fill ? '铺满屏幕（上下边缘略有裁切）' : '完整显示（可能有黑边）', 2000);
-  },
   disconnect: () => disconnect(),
   keyboard: () => {
     if (!session) return;
@@ -599,29 +589,7 @@ const actions: Record<string, () => void> = {
 // 这些操作常需要连续点击，执行后不收起菜单
 const KEEP_MENU_OPEN = new Set(['volup', 'voldown', 'mute']);
 
-// ---------- 移动端铺满：画面比例和屏幕不一致时适度放大，裁掉少量上下（或左右）边缘 ----------
-// 上限 12%：差得太多时只缩小黑边，不过度裁切（被裁掉的通常是手机状态栏和底部手势条）
-const MAX_FILL_ZOOM = 1.12;
-const fillBtn = document.querySelector<HTMLButtonElement>('[data-action="fill"]')!;
-function applyFill() {
-  document.body.classList.toggle('fill', settings.fill && isTouchDevice);
-  fillBtn.classList.toggle('on', settings.fill);
-  fillBtn.dataset.label = settings.fill ? '完整显示' : '铺满屏幕';
-  layoutFill();
-}
-function layoutFill() {
-  if (!document.body.classList.contains('fill') || !document.body.classList.contains('immersive')) return;
-  const vw = canvas.width || Number(screenWrap.style.getPropertyValue('--arw')) || 9;
-  const vh = canvas.height || Number(screenWrap.style.getPropertyValue('--arh')) || 20;
-  const r = screenWrap.getBoundingClientRect();
-  if (!r.width || !r.height) return;
-  const fit = Math.min(r.width / vw, r.height / vh);
-  const s = Math.min(Math.max(r.width / vw, r.height / vh), fit * MAX_FILL_ZOOM);
-  screenWrap.style.setProperty('--cw', `${vw * s}px`);
-  screenWrap.style.setProperty('--ch', `${vh * s}px`);
-}
-new ResizeObserver(layoutFill).observe(screenWrap);
-applyFill();
+
 document.querySelectorAll<HTMLButtonElement>('.toolbar button').forEach((b) =>
   b.addEventListener('click', () => {
     actions[b.dataset.action!]?.();
