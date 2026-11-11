@@ -273,6 +273,7 @@ interface Session {
   audio: AudioPlayer | null;
   input: InputHandler;
   statTimer: number;
+  statusTimer: number;
   screenOn: boolean;
 }
 let session: Session | null = null;
@@ -330,7 +331,7 @@ function connect() {
   ws.binaryType = 'arraybuffer';
   const video = new VideoPlayer(canvas);
   const input = new InputHandler(canvas, send);
-  const s: Session = { ws, video, audio, input, statTimer: 0, screenOn: true };
+  const s: Session = { ws, video, audio, input, statTimer: 0, statusTimer: 0, screenOn: true };
   session = s;
 
   video.requestKeyFrame = () => send(simple(MsgType.ResetVideo));
@@ -347,7 +348,9 @@ function connect() {
   setStatus('connecting', '连接中…');
   connectBtn.textContent = '断开';
   connectBtn.classList.add('danger');
-  for (const k of ['device', 'res', 'fps', 'vkbps', 'akbps', 'abuf', 'codec']) setStat(k, '—');
+  for (const k of ['device', 'battery', 'cpu', 'skin', 'btemp', 'perf']) setStat(k, '—');
+  pollDeviceStatus(serial);
+  s.statusTimer = window.setInterval(() => pollDeviceStatus(serial), 5000);
   statsEl.dataset.on = 'true';
   logEl.textContent = '';
 
@@ -374,20 +377,60 @@ function connect() {
 
   s.statTimer = window.setInterval(() => {
     const v = video.stats;
-    setStat('res', v.width ? `${v.width} × ${v.height}` : '—');
-    setStat('fps', `${v.fps} fps`);
-    setStat('vkbps', `${(v.kbps / 1000).toFixed(2)} Mbps`);
-    setStat('codec', v.codec || '—');
+    setStat('perf', `${v.fps} fps · ${(v.kbps / 1000).toFixed(1)} Mbps`);
+    // 次要信息放到悬停提示里
+    const lines = [
+      `分辨率：${v.width ? `${v.width} × ${v.height}` : '—'}`,
+      `解码器：${v.codec || '—'}`,
+      `视频码率：${(v.kbps / 1000).toFixed(2)} Mbps`,
+    ];
     if (audio) {
-      const codec = audio.stats.codec ? audio.stats.codec.toUpperCase() : '—';
-      setStat('akbps', `${codec} ${audio.stats.kbps}k`);
       const u = audio.stats.underruns;
-      setStat('abuf', `${audio.stats.bufferedMs} ms${u ? ` · 欠载 ${u}` : ''}`);
-    } else {
-      setStat('akbps', '关闭');
-      setStat('abuf', '—');
-    }
+      lines.push(
+        `音频：${audio.stats.codec ? audio.stats.codec.toUpperCase() : '—'} ${audio.stats.kbps} kbps`,
+        `音频缓冲：${audio.stats.bufferedMs} ms${u ? `（欠载 ${u} 次）` : ''}`,
+      );
+    } else lines.push('音频：关闭');
+    $('perfChip').title = lines.join('\n');
   }, 1000);
+}
+
+// ---------- 电量与温度 ----------
+interface DeviceStatus {
+  battery: { level: number | null; charging: boolean; full: boolean; temp: number | null; voltage: number | null };
+  temps: { cpu: number | null; gpu: number | null; skin: number | null };
+}
+let statusBusy = false;
+async function pollDeviceStatus(serial: string) {
+  if (statusBusy) return;
+  statusBusy = true;
+  try {
+    const res = await fetch(`/api/devices/${encodeURIComponent(serial)}/status`);
+    if (!res.ok) return;
+    const st: DeviceStatus = await res.json();
+    if (!session) return;
+    const b = st.battery;
+    setStat('battery', b.level === null ? '—' : `${b.level}%${b.full ? ' 已充满' : b.charging ? ' ⚡' : ''}`);
+    const bc = $('batteryChip');
+    bc.dataset.level = b.level !== null && b.level <= 15 && !b.charging ? 'hot' : '';
+    bc.title = `电量 ${b.level ?? '—'}%${b.voltage ? ` · ${b.voltage.toFixed(2)} V` : ''}${b.charging ? ' · 充电中' : ''}`;
+    setTemp('cpu', 'cpuChip', st.temps.cpu, 60, 75);
+    setTemp('skin', 'skinChip', st.temps.skin, 40, 45);
+    setTemp('btemp', 'btempChip', b.temp, 40, 45);
+    if (st.temps.gpu !== null) $('cpuChip').title = `CPU 温度（各核心最高值）· GPU ${st.temps.gpu.toFixed(1)}℃`;
+  } catch {
+    /* 下次再试 */
+  } finally {
+    statusBusy = false;
+  }
+}
+/** 温度显示，超过 warn/hot 阈值时变色 */
+function setTemp(key: string, chipId: string, v: number | null, warn: number, hot: number) {
+  const chip = $(chipId);
+  chip.hidden = v === null;
+  if (v === null) return;
+  setStat(key, `${v.toFixed(1)}℃`);
+  chip.dataset.level = v >= hot ? 'hot' : v >= warn ? 'warn' : '';
 }
 
 function onJson(s: Session, m: Record<string, string> & { width?: number; height?: number }) {
@@ -450,6 +493,7 @@ function disconnect(keepImmersive = false) {
   s.input.releaseAll();
   s.input.destroy();
   clearInterval(s.statTimer);
+  clearInterval(s.statusTimer);
   s.ws.onclose = null;
   s.ws.close();
   s.video.destroy();

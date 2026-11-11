@@ -5,7 +5,7 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { WebSocketServer } from 'ws';
 import { config } from './config.js';
-import { listDevices, getDeviceInfo, connectTcp, startServer } from './adb.js';
+import { listDevices, getDeviceInfo, getDeviceStatus, connectTcp, startServer } from './adb.js';
 import { ScrcpySession, sanitizeOptions } from './scrcpy.js';
 
 // ---------- 浏览器 <-> 服务端 二进制帧格式 ----------
@@ -76,6 +76,10 @@ async function handleApi(req, res, url) {
     }
     if (req.method === 'GET' && url.pathname === '/api/devices') {
       return sendJson(res, 200, { devices: await listDevices() });
+    }
+    const st = url.pathname.match(/^\/api\/devices\/([^/]+)\/status$/);
+    if (req.method === 'GET' && st) {
+      return sendJson(res, 200, await getDeviceStatus(decodeURIComponent(st[1])));
     }
     const m = url.pathname.match(/^\/api\/devices\/([^/]+)\/info$/);
     if (req.method === 'GET' && m) {

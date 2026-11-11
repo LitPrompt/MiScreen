@@ -121,7 +121,13 @@ kbd {
 }
 .chip svg { width: 14px; height: 14px; }
 .chip b { font-weight: 500; color: var(--text); font-variant-numeric: tabular-nums; }
-.chip-codec b { color: var(--muted); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11px; }
+.chip .lbl { font-size: 11px; }
+.chip-device b { font-weight: 600; }
+.chip[data-level='warn'] { border-color: color-mix(in srgb, var(--warn) 55%, transparent); background: color-mix(in srgb, var(--warn) 12%, var(--surface-2)); }
+.chip[data-level='warn'] b { color: var(--warn); }
+.chip[data-level='hot'] { border-color: color-mix(in srgb, var(--err) 55%, transparent); background: color-mix(in srgb, var(--err) 12%, var(--surface-2)); }
+.chip[data-level='hot'] b { color: var(--err); }
+.chip-perf { cursor: help; }
 .panel-toggle[aria-pressed='true'] { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
 
 .banner {

@@ -25,13 +25,16 @@
       <div class="live" id="stats">
         <div id="status" class="status" data-state="idle"><i></i><span>未连接</span></div>
         <div class="chips">
-          <span class="chip" title="设备"><svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2" /></svg><b data-k="device">—</b></span>
-          <span class="chip" title="分辨率"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 15v5h-5" /></svg><b data-k="res">—</b></span>
-          <span class="chip" title="帧率"><svg viewBox="0 0 24 24"><path d="M4 18h16M7 15V9M12 15V6M17 15v-4" /></svg><b data-k="fps">—</b></span>
-          <span class="chip" title="视频码率"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2" /><path d="M16 10l5-3v10l-5-3" /></svg><b data-k="vkbps">—</b></span>
-          <span class="chip" title="音频"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM17 9a4 4 0 0 1 0 6" /></svg><b data-k="akbps">—</b></span>
-          <span class="chip" title="音频缓冲 / 欠载次数"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></svg><b data-k="abuf">—</b></span>
-          <span class="chip chip-codec" title="解码器"><b data-k="codec">—</b></span>
+          <span class="chip chip-device" title="设备"><b data-k="device">—</b></span>
+          <span class="chip" id="batteryChip" title="电量">
+            <svg viewBox="0 0 24 24"><rect x="2" y="7" width="17" height="10" rx="2" /><path d="M22 11v2" /></svg><b data-k="battery">—</b>
+          </span>
+          <span class="chip temp" id="cpuChip" title="CPU 温度（各核心最高值）"><span class="lbl">CPU</span><b data-k="cpu">—</b></span>
+          <span class="chip temp" id="skinChip" title="机身表面温度"><span class="lbl">机身</span><b data-k="skin">—</b></span>
+          <span class="chip temp" id="btempChip" title="电池温度"><span class="lbl">电池</span><b data-k="btemp">—</b></span>
+          <span class="chip chip-perf" id="perfChip" title="画面信息">
+            <svg viewBox="0 0 24 24"><path d="M4 18h16M7 15V9M12 15V6M17 15v-4" /></svg><b data-k="perf">—</b>
+          </span>
         </div>
       </div>
 
