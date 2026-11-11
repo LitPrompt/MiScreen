@@ -380,7 +380,8 @@ body.immersive .screen-wrap { border-radius: 0; box-shadow: none; }
   body.immersive .stage { flex-direction: column; gap: 0; justify-content: space-between; }
   body.immersive .screen-wrap {
     margin: auto 0;
-    width: min(100vw, calc((100dvh - 48px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * var(--arw) / var(--arh)));
+    /* 导航栏浮在画面上，不占高度 */
+    width: min(100vw, calc((100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)) * var(--arw) / var(--arh)));
   }
   body.immersive .toolbar { display: none; }
   /* 铺满：画面区占满导航栏以上的全部空间，canvas 按 JS 算出的尺寸居中，超出部分裁掉 */
@@ -401,12 +402,19 @@ body.immersive .screen-wrap { border-radius: 0; box-shadow: none; }
   }
   body.immersive .navbar {
     display: flex;
-    flex: none;
-    width: 100%;
-    height: 48px;
+    position: fixed;
+    z-index: 25;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(48px + env(safe-area-inset-bottom));
+    padding-bottom: env(safe-area-inset-bottom);
     justify-content: space-around;
     align-items: center;
-    background: #000;
+    /* 半透明浮在画面底部 */
+    background: rgb(0 0 0 / .35);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     touch-action: none;
     user-select: none;
     -webkit-user-select: none;
@@ -421,7 +429,8 @@ body.immersive .screen-wrap { border-radius: 0; box-shadow: none; }
     background: transparent;
     border: 0;
     border-radius: 22px;
-    color: #e6e6e6;
+    color: #fff;
+    filter: drop-shadow(0 1px 2px rgb(0 0 0 / .6));
   }
   body.immersive .navbar button:active { background: rgb(255 255 255 / .12); }
   body.immersive .navbar svg { width: 22px; height: 22px; }
