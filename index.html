@@ -36,10 +36,12 @@
           </div>
         </div>
 
-        <button class="fab" id="fab" aria-label="打开菜单" hidden>
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><circle cx="12" cy="12" r="8" /></svg>
-        </button>
         <div class="menu-backdrop" id="menuBackdrop" hidden></div>
+        <nav class="navbar" id="navbar" aria-label="导航栏（长按打开更多操作）">
+          <button data-nav="back" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M17 5v14L6 12z" /></svg></button>
+          <button data-nav="home" aria-label="主页"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" /></svg></button>
+          <button data-nav="recents" aria-label="多任务"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1" /></svg></button>
+        </nav>
         <nav class="toolbar" aria-label="设备操作">
           <button data-action="power" title="电源键"><svg viewBox="0 0 24 24"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0" /></svg></button>
           <button data-action="volup" title="音量 +"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM17 9v6M14 12h6" /></svg></button>

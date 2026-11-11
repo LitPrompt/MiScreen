@@ -216,7 +216,6 @@ const isTouchDevice = matchMedia('(pointer: coarse)').matches;
 /** 沉浸模式：画面铺满视口，工具栏在底部；同时尝试浏览器全屏（iPhone Safari 不支持时仍保留铺满效果） */
 function setImmersive(on: boolean) {
   document.body.classList.toggle('immersive', on);
-  $('fab').hidden = !(on && isTouchDevice);
   if (!on) setMenu(false);
   if (on) document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {});
   else if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
@@ -467,7 +466,7 @@ $('clipCopy').addEventListener('click', async () => {
   }
 });
 
-// ---------- 移动端悬浮球 ----------
+// ---------- 移动端：导航栏 + 弹出菜单 ----------
 function setMenu(open: boolean) {
   document.body.classList.toggle('menu-open', open);
   $('menuBackdrop').hidden = !open;
@@ -477,62 +476,31 @@ $('menuBackdrop').addEventListener('pointerdown', (e) => {
   setMenu(false);
 });
 
-(function initFab() {
-  const fab = $('fab');
-  const KEY = 'miscreen.fab';
-  let pos = { side: 'right', y: 0.35 };
-  try {
-    pos = { ...pos, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
-  } catch {
-    /* ignore */
-  }
-  const place = () => {
-    fab.style.top = `calc(${pos.y * 100}% - 24px)`;
-    fab.style.left = pos.side === 'left' ? '8px' : '';
-    fab.style.right = pos.side === 'right' ? '8px' : '';
-    fab.dataset.side = pos.side;
-  };
-  place();
-
-  let start: { x: number; y: number; id: number } | null = null;
-  let dragging = false;
-  fab.addEventListener('pointerdown', (e) => {
+// 底部三键导航栏：点按 = 返回/主页/多任务，长按 = 打开完整菜单
+(function initNavbar() {
+  const bar = $('navbar');
+  let timer = 0;
+  let longPressed = false;
+  bar.addEventListener('pointerdown', (e) => {
     e.preventDefault();
-    start = { x: e.clientX, y: e.clientY, id: e.pointerId };
-    dragging = false;
-    fab.setPointerCapture(e.pointerId);
+    longPressed = false;
+    timer = window.setTimeout(() => {
+      longPressed = true;
+      navigator.vibrate?.(15);
+      setMenu(true);
+    }, 500);
   });
-  fab.addEventListener('pointermove', (e) => {
-    if (!start || e.pointerId !== start.id) return;
-    if (!dragging && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 8) return;
-    dragging = true;
-    fab.classList.add('dragging');
-    fab.style.left = `${e.clientX - 24}px`;
-    fab.style.right = '';
-    fab.style.top = `${e.clientY - 24}px`;
-  });
-  const end = (e: PointerEvent) => {
-    if (!start || e.pointerId !== start.id) return;
-    start = null;
-    fab.classList.remove('dragging');
-    if (!dragging) {
-      setMenu(!document.body.classList.contains('menu-open'));
-      return;
-    }
-    // 松手后吸附到最近的左右边缘
-    pos = {
-      side: e.clientX < innerWidth / 2 ? 'left' : 'right',
-      y: Math.min(Math.max(e.clientY / innerHeight, 0.08), 0.92),
-    };
-    try {
-      localStorage.setItem(KEY, JSON.stringify(pos));
-    } catch {
-      /* ignore */
-    }
-    place();
-  };
-  fab.addEventListener('pointerup', end);
-  fab.addEventListener('pointercancel', end);
+  const cancel = () => clearTimeout(timer);
+  bar.addEventListener('pointerup', cancel);
+  bar.addEventListener('pointercancel', cancel);
+  bar.addEventListener('pointerleave', cancel);
+  bar.addEventListener('contextmenu', (e) => e.preventDefault());
+  bar.querySelectorAll<HTMLButtonElement>('button').forEach((b) =>
+    b.addEventListener('click', () => {
+      if (longPressed) return;
+      actions[b.dataset.nav!]?.();
+    }),
+  );
 })();
 
 // 桌面端按 Esc 退出浏览器全屏时同步退出沉浸模式（移动端保留铺满效果，可用工具栏按钮退出）
