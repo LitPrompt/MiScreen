@@ -34,7 +34,6 @@
             <p>选择设备后点击「连接」</p>
             <small>左键/触摸 = 点按滑动 · 右键 = 返回 · 中键 = 主页 · 滚轮 = 滚动 · 点击画面后可直接打字（支持中文；手机上用工具栏的键盘按钮）</small>
           </div>
-          <div class="kbd-hint" id="kbdHint" hidden>键盘已捕获</div>
         </div>
 
         <nav class="toolbar" aria-label="设备操作">
@@ -104,7 +103,9 @@
             <select id="audioSource">
               <option value="output">系统输出（手机端静音）</option>
               <option value="playback">应用播放 + 手机同时出声（Android 13+，部分 MIUI 不支持）</option>
-              <option value="mic">麦克风</option>
+              <option value="mic">手机麦克风</option>
+              <option value="voice-call">通话声音（双方，部分机型可用）</option>
+              <option value="voice-call-downlink">通话声音（仅对方）</option>
             </select>
           </label>
           <label class="field">

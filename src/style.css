@@ -149,18 +149,6 @@ canvas.live { visibility: visible; cursor: pointer; }
 .placeholder svg { width: 48px; height: 48px; stroke-width: 1.2; color: #3a424c; }
 .placeholder p { margin: 0; color: #c9ced4; font-size: 15px; }
 .placeholder small { max-width: 280px; line-height: 1.6; }
-.kbd-hint {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgb(0 0 0 / .6);
-  color: #fff;
-  font-size: 12px;
-  padding: 3px 10px;
-  border-radius: 999px;
-  pointer-events: none;
-}
 .ime-sink {
   position: absolute;
   left: 0;

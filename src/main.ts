@@ -12,7 +12,6 @@ const statusEl = $('status');
 const canvas = $<HTMLCanvasElement>('screen');
 const screenWrap = $('screenWrap');
 const placeholder = $('placeholder');
-const kbdHint = $('kbdHint');
 const logEl = $('log');
 const clipboardEl = $<HTMLTextAreaElement>('clipboard');
 const banner = $('banner');
@@ -381,7 +380,6 @@ function disconnect(keepImmersive = false) {
   canvas.classList.remove('live');
   canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
   placeholder.hidden = false;
-  kbdHint.hidden = true;
   if (!keepImmersive) setImmersive(false);
   connectBtn.textContent = '连接';
   setStatus('idle', '未连接');
@@ -457,10 +455,6 @@ $('clipCopy').addEventListener('click', async () => {
     document.execCommand('copy');
   }
 });
-
-// 键盘捕获提示
-document.addEventListener('focusin', () => (kbdHint.hidden = !session?.input.focused));
-document.addEventListener('focusout', () => setTimeout(() => (kbdHint.hidden = !session?.input.focused)));
 
 // 桌面端按 Esc 退出浏览器全屏时同步退出沉浸模式（移动端保留铺满效果，可用工具栏按钮退出）
 document.addEventListener('fullscreenchange', () => {
