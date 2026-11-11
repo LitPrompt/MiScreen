@@ -1,0 +1,17 @@
+#!/bin/bash
+# 容器由应用中心通过 docker-project 启停，这里只负责状态检查。
+# 应用用户没有 docker 权限，所以用健康检查接口判断是否在运行。
+case $1 in
+start|stop)
+    exit 0
+    ;;
+status)
+    if curl -sfk --max-time 3 "https://127.0.0.1:${TRIM_SERVICE_PORT:-18443}/api/health" >/dev/null 2>&1; then
+        exit 0
+    fi
+    exit 3
+    ;;
+*)
+    exit 1
+    ;;
+esac

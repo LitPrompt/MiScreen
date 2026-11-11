@@ -1,0 +1,15 @@
+appname=miscreen
+version=1.0.0
+display_name=MiScreen 手机投屏
+desc=在浏览器里查看和操控 USB 连接的安卓手机（基于 scrcpy），支持音视频、触控、键盘和中文输入、剪贴板同步、小窗模式。首次连接需在手机上允许 USB 调试。
+platform=x86
+source=thirdparty
+maintainer=LitPrompt
+maintainer_url=https://github.com/LitPrompt/MiScreen
+distributor=LitPrompt
+service_port=18443
+checkport=true
+desktop_uidir=ui
+desktop_applaunchname=miscreen.Application
+ctl_stop=true
+changelog=首个 fpk 版本

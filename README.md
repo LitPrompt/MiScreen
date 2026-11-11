@@ -72,6 +72,22 @@ docker run -d --name miscreen --restart unless-stopped \
 | `ADB_PATH` | `adb` | adb 可执行文件 |
 | `MAX_WS_BUFFER` | `4194304` | WebSocket 发送缓冲上限（字节），超过后丢帧并请求关键帧 |
 
+## 飞牛 fnOS 应用（fpk）
+
+`fnos/` 目录是飞牛应用包的源文件。在飞牛本机（自带 `fnpack`）上运行：
+
+```bash
+sudo ./fnos/build.sh        # 生成 fnos/out/miscreen.fpk
+```
+
+脚本会先构建 Docker 镜像，把镜像文件系统导出为 `rootfs.tar.gz` 放进安装包。安装时应用中心用包里的 `Dockerfile`（`FROM scratch` + `ADD`）离线构建镜像，不需要联网。
+
+- 安装：应用中心 →「手动安装」选择 fpk，或 `sudo appcenter-cli install-fpk miscreen.fpk`
+- 访问：桌面图标，或 `https://<飞牛地址>:18443`（自签名证书，首次需手动信任）
+- 数据：adb 授权密钥和证书在 `/var/apps/miscreen/shares/miscreen/data`，卸载后保留
+- 容器名同为 `miscreen`、端口 18080/18443，不要和上面的 docker compose 部署同时运行
+- 升级：改 `fnos/pkg/manifest` 里的 `version` 后重新打包安装
+
 ## 本地开发
 
 需要 Node.js 20+，并且本机 `adb devices` 能看到设备。

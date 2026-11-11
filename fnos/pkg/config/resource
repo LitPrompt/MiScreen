@@ -1,0 +1,22 @@
+{
+    "docker-project": {
+        "projects": [
+            {
+                "name": "miscreen",
+                "path": "docker"
+            }
+        ]
+    },
+    "data-share": {
+        "shares": [
+            {
+                "name": "miscreen",
+                "permission": { "rw": ["docker-miscreen"] }
+            },
+            {
+                "name": "miscreen/data",
+                "permission": { "rw": ["docker-miscreen"] }
+            }
+        ]
+    }
+}

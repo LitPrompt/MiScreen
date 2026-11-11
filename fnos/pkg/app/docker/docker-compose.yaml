@@ -1,0 +1,19 @@
+services:
+  miscreen:
+    # 镜像由同目录的 Dockerfile 从 rootfs.tar.gz 离线构建，不需要联网
+    build: .
+    image: miscreen:@VERSION@
+    container_name: miscreen
+    restart: unless-stopped
+    ports:
+      - "18080:8080"   # HTTP（仅 localhost 可用 WebCodecs）
+      - "18443:8443"   # HTTPS（自签名证书，局域网访问用这个）
+    volumes:
+      # 挂载整个 USB 总线 + cgroup 规则：手机拔插后无需重启容器
+      - /dev/bus/usb:/dev/bus/usb
+      # adb 授权密钥和证书，卸载应用后保留
+      - /var/apps/miscreen/shares/miscreen/data:/data
+    device_cgroup_rules:
+      - "c 189:* rmw"
+    environment:
+      TZ: Asia/Shanghai
