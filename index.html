@@ -36,6 +36,10 @@
           </div>
         </div>
 
+        <button class="fab" id="fab" aria-label="打开菜单" hidden>
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><circle cx="12" cy="12" r="8" /></svg>
+        </button>
+        <div class="menu-backdrop" id="menuBackdrop" hidden></div>
         <nav class="toolbar" aria-label="设备操作">
           <button data-action="power" title="电源键"><svg viewBox="0 0 24 24"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0" /></svg></button>
           <button data-action="volup" title="音量 +"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM17 9v6M14 12h6" /></svg></button>
@@ -49,11 +53,12 @@
           <span class="sep"></span>
           <button data-action="notifications" title="下拉通知栏"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4" /></svg></button>
           <button data-action="quicksettings" title="快捷设置"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></svg></button>
-          <button data-action="screenoff" title="关闭手机屏幕（继续投屏）"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" /></svg></button>
+          <button data-action="screenoff" title="关闭手机屏幕"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" /></svg></button>
           <span class="sep"></span>
           <button data-action="mute" title="本地静音"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM16 9l5 6M21 9l-5 6" /></svg></button>
           <button data-action="screenshot" title="截图"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg></button>
-          <button data-action="fullscreen" title="全屏 / 退出全屏"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg></button>
+          <button data-action="disconnect" class="menu-only" title="断开连接"><svg viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l-5-5 5-5M5 12h11" /></svg></button>
+          <button data-action="fullscreen" title="全屏" data-label="退出全屏"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg></button>
         </nav>
       </section>
 
@@ -131,8 +136,8 @@
             <input type="range" id="audioBuffer" min="20" max="300" step="10" />
           </label>
           <label class="field">
-            <span>音量</span>
-            <input type="range" id="volume" min="0" max="1" step="0.05" />
+            <span>音量 <output id="volumeOut"></output></span>
+            <input type="range" id="volume" min="0" max="3" step="0.05" />
           </label>
         </section>
 

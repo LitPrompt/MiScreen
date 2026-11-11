@@ -93,6 +93,7 @@ function bindSetting<K extends keyof Settings>(key: K, onChange?: () => void) {
 
 const updateBitrateLabel = () => ($('bitrateOut').textContent = `${settings.videoBitRate} Mbps`);
 const updateBufferLabel = () => ($('bufferOut').textContent = `${settings.audioBuffer} ms`);
+const updateVolumeLabel = () => ($('volumeOut').textContent = `${Math.round(settings.volume * 100)}%`);
 bindSetting('videoCodec');
 bindSetting('videoBitRate', updateBitrateLabel);
 bindSetting('maxSize');
@@ -105,13 +106,17 @@ bindSetting('audioBuffer', () => {
   updateBufferLabel();
   session?.audio?.setLatency(settings.audioBuffer);
 });
-bindSetting('volume', () => session?.audio?.setVolume(muted ? 0 : settings.volume));
+bindSetting('volume', () => {
+  updateVolumeLabel();
+  session?.audio?.setVolume(muted ? 0 : settings.volume);
+});
 bindSetting('stayAwake');
 bindSetting('screenOff');
 bindSetting('showTouches');
 bindSetting('powerOffOnClose');
 updateBitrateLabel();
 updateBufferLabel();
+updateVolumeLabel();
 
 // ---------- UI 辅助 ----------
 function setStatus(state: 'idle' | 'connecting' | 'connected' | 'error', text: string) {
@@ -211,6 +216,8 @@ const isTouchDevice = matchMedia('(pointer: coarse)').matches;
 /** 沉浸模式：画面铺满视口，工具栏在底部；同时尝试浏览器全屏（iPhone Safari 不支持时仍保留铺满效果） */
 function setImmersive(on: boolean) {
   document.body.classList.toggle('immersive', on);
+  $('fab').hidden = !(on && isTouchDevice);
+  if (!on) setMenu(false);
   if (on) document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {});
   else if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
 }
@@ -425,15 +432,19 @@ const actions: Record<string, () => void> = {
     });
   },
   fullscreen: () => setImmersive(!document.body.classList.contains('immersive')),
+  disconnect: () => disconnect(),
   keyboard: () => {
     if (!session) return;
     if (session.input.focused) session.input.blur();
     else session.input.focus(); // 在触屏设备上会弹出软键盘
   },
 };
+// 这些操作常需要连续点击，执行后不收起菜单
+const KEEP_MENU_OPEN = new Set(['volup', 'voldown', 'mute']);
 document.querySelectorAll<HTMLButtonElement>('.toolbar button').forEach((b) =>
   b.addEventListener('click', () => {
     actions[b.dataset.action!]?.();
+    if (!KEEP_MENU_OPEN.has(b.dataset.action!)) setMenu(false);
     // 桌面端点完按钮后把焦点还给画面，方便继续打字；触屏设备上不这么做，避免弹出软键盘
     if (session && !isTouchDevice && b.dataset.action !== 'keyboard') session.input.focus();
   }),
@@ -455,6 +466,74 @@ $('clipCopy').addEventListener('click', async () => {
     document.execCommand('copy');
   }
 });
+
+// ---------- 移动端悬浮球 ----------
+function setMenu(open: boolean) {
+  document.body.classList.toggle('menu-open', open);
+  $('menuBackdrop').hidden = !open;
+}
+$('menuBackdrop').addEventListener('pointerdown', (e) => {
+  e.preventDefault();
+  setMenu(false);
+});
+
+(function initFab() {
+  const fab = $('fab');
+  const KEY = 'miscreen.fab';
+  let pos = { side: 'right', y: 0.35 };
+  try {
+    pos = { ...pos, ...JSON.parse(localStorage.getItem(KEY) || '{}') };
+  } catch {
+    /* ignore */
+  }
+  const place = () => {
+    fab.style.top = `calc(${pos.y * 100}% - 24px)`;
+    fab.style.left = pos.side === 'left' ? '8px' : '';
+    fab.style.right = pos.side === 'right' ? '8px' : '';
+    fab.dataset.side = pos.side;
+  };
+  place();
+
+  let start: { x: number; y: number; id: number } | null = null;
+  let dragging = false;
+  fab.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    start = { x: e.clientX, y: e.clientY, id: e.pointerId };
+    dragging = false;
+    fab.setPointerCapture(e.pointerId);
+  });
+  fab.addEventListener('pointermove', (e) => {
+    if (!start || e.pointerId !== start.id) return;
+    if (!dragging && Math.hypot(e.clientX - start.x, e.clientY - start.y) < 8) return;
+    dragging = true;
+    fab.classList.add('dragging');
+    fab.style.left = `${e.clientX - 24}px`;
+    fab.style.right = '';
+    fab.style.top = `${e.clientY - 24}px`;
+  });
+  const end = (e: PointerEvent) => {
+    if (!start || e.pointerId !== start.id) return;
+    start = null;
+    fab.classList.remove('dragging');
+    if (!dragging) {
+      setMenu(!document.body.classList.contains('menu-open'));
+      return;
+    }
+    // 松手后吸附到最近的左右边缘
+    pos = {
+      side: e.clientX < innerWidth / 2 ? 'left' : 'right',
+      y: Math.min(Math.max(e.clientY / innerHeight, 0.08), 0.92),
+    };
+    try {
+      localStorage.setItem(KEY, JSON.stringify(pos));
+    } catch {
+      /* ignore */
+    }
+    place();
+  };
+  fab.addEventListener('pointerup', end);
+  fab.addEventListener('pointercancel', end);
+})();
 
 // 桌面端按 Esc 退出浏览器全屏时同步退出沉浸模式（移动端保留铺满效果，可用工具栏按钮退出）
 document.addEventListener('fullscreenchange', () => {

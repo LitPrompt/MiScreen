@@ -23,7 +23,15 @@ export class AudioPlayer {
   constructor() {
     this.ctx = new AudioContext({ sampleRate: 48000, latencyHint: 'interactive' });
     this.gain = this.ctx.createGain();
-    this.gain.connect(this.ctx.destination);
+    // 限幅器：音量放大到 100% 以上时防止削波爆音
+    const limiter = this.ctx.createDynamicsCompressor();
+    limiter.threshold.value = -3;
+    limiter.knee.value = 0;
+    limiter.ratio.value = 20;
+    limiter.attack.value = 0.003;
+    limiter.release.value = 0.15;
+    this.gain.connect(limiter);
+    limiter.connect(this.ctx.destination);
     this.ready = this.ctx.audioWorklet.addModule(`${import.meta.env.BASE_URL}pcm-worklet.js`).then(() => {
       this.node = new AudioWorkletNode(this.ctx, 'pcm-player', { outputChannelCount: [2] });
       this.node.port.onmessage = (e) => {
