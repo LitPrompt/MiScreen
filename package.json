@@ -1,0 +1,23 @@
+{
+  "name": "miscreen",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Web 版 scrcpy：通过 ADB 在浏览器里实时控制 Android 设备并传输音视频",
+  "type": "module",
+  "scripts": {
+    "dev:web": "vite",
+    "dev:server": "node --watch server/index.js",
+    "build": "tsc --noEmit && vite build",
+    "start": "node server/index.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "ws": "^8.22.2"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  }
+}

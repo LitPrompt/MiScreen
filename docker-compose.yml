@@ -1,0 +1,27 @@
+services:
+  miscreen:
+    build:
+      context: .
+      # args:
+      #   NPM_REGISTRY: https://registry.npmmirror.com
+      #   APT_MIRROR: mirrors.ustc.edu.cn
+    image: miscreen:latest
+    container_name: miscreen
+    restart: unless-stopped
+    ports:
+      - "8080:8080"   # HTTP（仅 localhost 可用 WebCodecs）
+      - "8443:8443"   # HTTPS（自签名证书，局域网访问用这个）
+    volumes:
+      # 挂载整个 USB 总线 + cgroup 规则：手机拔插后无需重启容器
+      - /dev/bus/usb:/dev/bus/usb
+      - ./data:/data
+    device_cgroup_rules:
+      - "c 189:* rmw"
+    environment:
+      TZ: Asia/Shanghai
+      # 设置后启用 HTTP Basic 认证（强烈建议在非可信网络中开启）
+      # AUTH_USER: admin
+      # AUTH_PASSWORD: change-me
+      # 使用正式证书：
+      # TLS_CERT: /data/tls/fullchain.pem
+      # TLS_KEY: /data/tls/privkey.pem
