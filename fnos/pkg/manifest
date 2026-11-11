@@ -1,5 +1,5 @@
 appname=miscreen
-version=1.0.2
+version=1.0.3
 display_name=MiScreen 手机投屏
 desc=在浏览器里查看和操控 USB 连接的安卓手机（基于 scrcpy），支持音视频、触控、键盘和中文输入、剪贴板同步、小窗模式。首次连接需在手机上允许 USB 调试。
 platform=x86
@@ -12,4 +12,4 @@ checkport=true
 desktop_uidir=ui
 desktop_applaunchname=miscreen.Application
 ctl_stop=true
-changelog=修复飞牛窗口中工具栏超出窗口：高度不足时自动分列
+changelog=飞牛窗口中的小窗改用置顶画中画，不再显示 about:blank 地址栏

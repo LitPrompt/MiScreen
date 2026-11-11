@@ -646,7 +646,17 @@ document.addEventListener('fullscreenchange', () => {
 // Chrome / Edge 116+ 用 Document Picture-in-Picture（始终置顶）；其他浏览器退回普通弹出窗口。
 // 元素是直接移动过去的（事件监听、解码器、canvas 上下文都保留），关闭小窗时再移回来。
 type DocPip = { requestWindow(o: { width: number; height: number }): Promise<Window> };
-const docPip = (window as unknown as { documentPictureInPicture?: DocPip }).documentPictureInPicture;
+/**
+ * 文档画中画只能由顶层页面打开。嵌在同源页面（例如经飞牛网关打开的飞牛桌面窗口）里时，
+ * 借用顶层页面的 documentPictureInPicture；跨域或被沙箱隔离时拿不到，返回 undefined。
+ */
+function getDocPip(): DocPip | undefined {
+  try {
+    return (window.top as unknown as { documentPictureInPicture?: DocPip }).documentPictureInPicture;
+  } catch {
+    return undefined;
+  }
+}
 const pipHolder = $('pipHolder');
 const navbarEl = $('navbar');
 const PIP_BAR = 40; // 小窗底部导航栏高度
@@ -704,17 +714,24 @@ async function openPip() {
   if (pipWin) return pipWin.focus();
   if (document.body.classList.contains('immersive')) setImmersive(false);
   const size = pipSize();
-  let win: Window | null;
-  if (docPip && window === window.top) {
+  let win: Window | null = null;
+  const docPip = getDocPip();
+  if (docPip) {
     try {
       win = await docPip.requestWindow(size);
     } catch (e) {
-      return toast(`无法打开小窗：${(e as Error).message}`);
+      console.warn('文档画中画不可用，改用弹出窗口', e);
     }
-  } else {
-    win = window.open('', 'miscreen-pip', `popup,width=${size.width},height=${size.height}`);
+  }
+  if (!win) {
+    // 弹出窗口一定带地址栏；加载一个真实的空白页，避免显示 about:blank
+    win = window.open('pip.html', 'miscreen-pip', `popup,width=${size.width},height=${size.height}`);
     if (!win) return toast('弹出窗口被浏览器拦截，请允许本站弹出窗口');
-    win.document.body.replaceChildren();
+    const w = win;
+    if (w.document.readyState !== 'complete' || w.location.href === 'about:blank') {
+      await new Promise((r) => w.addEventListener('load', r, { once: true }));
+    }
+    w.document.body.replaceChildren();
   }
   pipWin = win;
   const d = win.document;
