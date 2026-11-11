@@ -365,7 +365,7 @@ body.immersive .stage {
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 body.immersive .screen-wrap { border-radius: 0; box-shadow: none; }
-.navbar { display: none; }
+.navbar, .nav-pill { display: none; }
 .menu-backdrop { position: fixed; inset: 0; z-index: 30; background: rgb(0 0 0 / .35); touch-action: none; }
 
 @media (pointer: fine) {
@@ -433,6 +433,45 @@ body.immersive .screen-wrap { border-radius: 0; box-shadow: none; }
     filter: drop-shadow(0 1px 2px rgb(0 0 0 / .6));
   }
   body.immersive .navbar button:active { background: rgb(255 255 255 / .12); }
+
+  /* 手势横条模式：三键平时收起，点横条后从底部滑出 */
+  body.immersive.nav-pill-mode .navbar {
+    transform: translateY(100%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform .2s ease, opacity .2s ease;
+  }
+  body.immersive.nav-pill-mode.nav-open .navbar,
+  body.immersive.nav-pill-mode.menu-open .navbar { transform: none; opacity: 1; pointer-events: auto; }
+  body.immersive.nav-pill-mode .nav-pill {
+    display: grid;
+    place-items: center;
+    position: fixed;
+    z-index: 26;
+    left: 50%;
+    /* 留在系统横条（安全区）上方，避免触发 iPhone 上滑回桌面 */
+    bottom: calc(env(safe-area-inset-bottom) + 4px);
+    width: 180px;
+    height: 30px;
+    transform: translateX(-50%);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    transition: opacity .2s;
+  }
+  body.immersive.nav-pill-mode.nav-open .nav-pill,
+  body.immersive.nav-pill-mode.menu-open .nav-pill { opacity: 0; pointer-events: none; }
+  .nav-pill i {
+    width: 120px;
+    height: 5px;
+    border-radius: 3px;
+    background: rgb(255 255 255 / .75);
+    box-shadow: 0 0 0 1px rgb(0 0 0 / .3), 0 1px 6px rgb(0 0 0 / .45);
+    transform: translateY(calc(var(--dy, 0px) / 3));
+    transition: width .15s, background .15s;
+  }
+  .nav-pill.active i { width: 140px; background: #fff; transition: width .15s, background .15s; }
   body.immersive .navbar svg { width: 22px; height: 22px; }
 
   body.immersive.menu-open .toolbar {
