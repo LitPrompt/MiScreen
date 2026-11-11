@@ -33,6 +33,8 @@ export class InputHandler {
   private ime: HTMLTextAreaElement;
   private abort = new AbortController();
   enabled = false;
+  /** 每次触摸/点击时调用（用于恢复被浏览器挂起的 AudioContext） */
+  onUserGesture: () => void = () => {};
 
   constructor(
     private surface: HTMLCanvasElement,
@@ -56,6 +58,10 @@ export class InputHandler {
 
   focus() {
     this.ime.focus({ preventScroll: true });
+  }
+
+  blur() {
+    this.ime.blur();
   }
 
   get focused() {
@@ -88,7 +94,9 @@ export class InputHandler {
       (e) => {
         if (!this.enabled) return;
         e.preventDefault();
-        this.focus();
+        this.onUserGesture();
+        // 只有鼠标操作才自动聚焦输入框；触屏设备上聚焦会弹出软键盘，改由工具栏「键盘」按钮打开
+        if (e.pointerType === 'mouse') this.focus();
         if (e.pointerType === 'mouse' && e.button === 2) {
           this.send(backOrScreenOn(KeyAction.Down));
           this.send(backOrScreenOn(KeyAction.Up));

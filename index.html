@@ -32,7 +32,7 @@
           <div class="placeholder" id="placeholder">
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3" /><path d="M10 18.5h4" /></svg>
             <p>选择设备后点击「连接」</p>
-            <small>左键/触摸 = 点按滑动 · 右键 = 返回 · 中键 = 主页 · 滚轮 = 滚动 · 点击画面后可直接打字（支持中文）</small>
+            <small>左键/触摸 = 点按滑动 · 右键 = 返回 · 中键 = 主页 · 滚轮 = 滚动 · 点击画面后可直接打字（支持中文；手机上用工具栏的键盘按钮）</small>
           </div>
           <div class="kbd-hint" id="kbdHint" hidden>键盘已捕获</div>
         </div>
@@ -46,6 +46,7 @@
           <button data-action="back" title="返回"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" /></svg></button>
           <button data-action="home" title="主页"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" /></svg></button>
           <button data-action="recents" title="最近任务"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2" /></svg></button>
+          <button data-action="keyboard" title="键盘输入"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2" /><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" /></svg></button>
           <span class="sep"></span>
           <button data-action="notifications" title="下拉通知栏"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4" /></svg></button>
           <button data-action="quicksettings" title="快捷设置"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></svg></button>
@@ -53,7 +54,7 @@
           <span class="sep"></span>
           <button data-action="mute" title="本地静音"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM16 9l5 6M21 9l-5 6" /></svg></button>
           <button data-action="screenshot" title="截图"><svg viewBox="0 0 24 24"><path d="M4 8h3l2-3h6l2 3h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg></button>
-          <button data-action="fullscreen" title="全屏"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg></button>
+          <button data-action="fullscreen" title="全屏 / 退出全屏"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg></button>
         </nav>
       </section>
 
@@ -102,7 +103,7 @@
             <span>音频来源</span>
             <select id="audioSource">
               <option value="output">系统输出（手机端静音）</option>
-              <option value="playback">应用播放 + 手机同时出声（Android 13+）</option>
+              <option value="playback">应用播放 + 手机同时出声（Android 13+，部分 MIUI 不支持）</option>
               <option value="mic">麦克风</option>
             </select>
           </label>

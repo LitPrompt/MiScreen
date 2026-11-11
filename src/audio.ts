@@ -37,6 +37,11 @@ export class AudioPlayer {
     this.ctx.resume();
   }
 
+  /** 浏览器可能因为不是在用户手势中创建而挂起 AudioContext，触摸时恢复 */
+  resume() {
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+  }
+
   setLatency(targetMs: number) {
     this.ready.then(() =>
       this.node!.port.postMessage({ type: 'latency', target: targetMs / 1000, max: (targetMs * 3) / 1000 }),

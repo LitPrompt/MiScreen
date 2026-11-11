@@ -207,6 +207,14 @@ interface Session {
 }
 let session: Session | null = null;
 let muted = false;
+const isTouchDevice = matchMedia('(pointer: coarse)').matches;
+
+/** 沉浸模式：画面铺满视口，工具栏在底部；同时尝试浏览器全屏（iPhone Safari 不支持时仍保留铺满效果） */
+function setImmersive(on: boolean) {
+  document.body.classList.toggle('immersive', on);
+  if (on) document.documentElement.requestFullscreen?.({ navigationUI: 'hide' }).catch(() => {});
+  else if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+}
 
 function send(msg: Uint8Array<ArrayBuffer>) {
   if (session?.ws.readyState === WebSocket.OPEN) session.ws.send(msg);
@@ -215,7 +223,10 @@ function send(msg: Uint8Array<ArrayBuffer>) {
 function connect() {
   const serial = deviceSel.value;
   if (!serial) return toast('没有可用设备');
-  disconnect();
+  const wasImmersive = document.body.classList.contains('immersive');
+  disconnect(true);
+  // 移动端默认全屏（必须在点击事件中同步调用）
+  if (isTouchDevice || wasImmersive) setImmersive(true);
   settings.serial = serial;
   saveSettings();
   $('reconnectHint').hidden = true;
@@ -253,8 +264,11 @@ function connect() {
 
   video.requestKeyFrame = () => send(simple(MsgType.ResetVideo));
   video.onError = (m) => toast(m, 8000);
+  input.onUserGesture = () => audio?.resume();
   video.onResize = (w, h) => {
     screenWrap.style.setProperty('--ar', `${w} / ${h}`);
+    screenWrap.style.setProperty('--arw', String(w));
+    screenWrap.style.setProperty('--arh', String(h));
     screenWrap.classList.toggle('landscape', w > h);
   };
   if (audio) audio.onError = (m) => toast(m, 6000);
@@ -313,7 +327,14 @@ function onJson(s: Session, m: Record<string, string> & { width?: number; height
       break;
     case 'audio-codec':
       if (m.codec) s.audio?.setCodec(m.codec);
-      else toast('设备无法采集音频，仅传输画面', 6000);
+      else if (settings.audioSource === 'playback') {
+        // MIUI 等系统会拒绝 playback 采集（registerAudioPolicy() returned -1），自动改用系统输出
+        settings.audioSource = 'output';
+        saveSettings();
+        $<HTMLSelectElement>('audioSource').value = 'output';
+        toast('该设备不支持「应用播放」采集，已切换为「系统输出」并重新连接', 6000);
+        setTimeout(connect, 300);
+      } else toast('设备无法采集音频，仅传输画面（可在日志中查看原因）', 6000);
       break;
     case 'session':
       s.input.setVideoSize(m.width!, m.height!);
@@ -346,7 +367,7 @@ function onJson(s: Session, m: Record<string, string> & { width?: number; height
   }
 }
 
-function disconnect() {
+function disconnect(keepImmersive = false) {
   const s = session;
   if (!s) return;
   session = null;
@@ -361,6 +382,7 @@ function disconnect() {
   canvas.getContext('2d')?.clearRect(0, 0, canvas.width, canvas.height);
   placeholder.hidden = false;
   kbdHint.hidden = true;
+  if (!keepImmersive) setImmersive(false);
   connectBtn.textContent = '连接';
   setStatus('idle', '未连接');
 }
@@ -404,15 +426,18 @@ const actions: Record<string, () => void> = {
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     });
   },
-  fullscreen: () => {
-    if (document.fullscreenElement) document.exitFullscreen();
-    else screenWrap.requestFullscreen().catch(() => {});
+  fullscreen: () => setImmersive(!document.body.classList.contains('immersive')),
+  keyboard: () => {
+    if (!session) return;
+    if (session.input.focused) session.input.blur();
+    else session.input.focus(); // 在触屏设备上会弹出软键盘
   },
 };
 document.querySelectorAll<HTMLButtonElement>('.toolbar button').forEach((b) =>
   b.addEventListener('click', () => {
     actions[b.dataset.action!]?.();
-    if (session) session.input.focus();
+    // 桌面端点完按钮后把焦点还给画面，方便继续打字；触屏设备上不这么做，避免弹出软键盘
+    if (session && !isTouchDevice && b.dataset.action !== 'keyboard') session.input.focus();
   }),
 );
 
@@ -436,6 +461,11 @@ $('clipCopy').addEventListener('click', async () => {
 // 键盘捕获提示
 document.addEventListener('focusin', () => (kbdHint.hidden = !session?.input.focused));
 document.addEventListener('focusout', () => setTimeout(() => (kbdHint.hidden = !session?.input.focused)));
+
+// 桌面端按 Esc 退出浏览器全屏时同步退出沉浸模式（移动端保留铺满效果，可用工具栏按钮退出）
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && !isTouchDevice) document.body.classList.remove('immersive');
+});
 
 refreshDevices();
 setInterval(() => {
