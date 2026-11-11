@@ -13,6 +13,7 @@
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3" /><path d="M10 18.5h4" /></svg>
         <span>MiScreen</span>
       </div>
+
       <div class="device-picker">
         <select id="device" aria-label="设备"></select>
         <button id="refresh" class="icon-btn" title="刷新设备列表" aria-label="刷新设备列表">
@@ -20,19 +21,41 @@
         </button>
         <button id="connect" class="primary">连接</button>
       </div>
-      <div id="status" class="status" data-state="idle"><i></i><span>未连接</span></div>
+
+      <div class="live" id="stats">
+        <div id="status" class="status" data-state="idle"><i></i><span>未连接</span></div>
+        <div class="chips">
+          <span class="chip" title="设备"><svg viewBox="0 0 24 24"><rect x="7" y="3" width="10" height="18" rx="2" /></svg><b data-k="device">—</b></span>
+          <span class="chip" title="分辨率"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 15v5h-5" /></svg><b data-k="res">—</b></span>
+          <span class="chip" title="帧率"><svg viewBox="0 0 24 24"><path d="M4 18h16M7 15V9M12 15V6M17 15v-4" /></svg><b data-k="fps">—</b></span>
+          <span class="chip" title="视频码率"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2" /><path d="M16 10l5-3v10l-5-3" /></svg><b data-k="vkbps">—</b></span>
+          <span class="chip" title="音频"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM17 9a4 4 0 0 1 0 6" /></svg><b data-k="akbps">—</b></span>
+          <span class="chip" title="音频缓冲 / 欠载次数"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></svg><b data-k="abuf">—</b></span>
+          <span class="chip chip-codec" title="解码器"><b data-k="codec">—</b></span>
+        </div>
+      </div>
+
+      <button id="togglePanel" class="icon-btn panel-toggle" title="设置面板" aria-label="设置面板" aria-pressed="true">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M15 4v16" /></svg>
+      </button>
     </header>
 
     <div id="banner" class="banner" hidden></div>
 
-    <main class="layout">
+    <main class="layout" id="layout">
       <section class="stage">
         <div class="screen-wrap" id="screenWrap">
           <canvas id="screen" tabindex="-1"></canvas>
           <div class="placeholder" id="placeholder">
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3" /><path d="M10 18.5h4" /></svg>
-            <p>选择设备后点击「连接」</p>
-            <small>左键/触摸 = 点按滑动 · 右键 = 返回 · 中键 = 主页 · 滚轮 = 滚动 · 点击画面后可直接打字（支持中文；手机上用工具栏的键盘按钮）</small>
+            <p>选择设备，点击「连接」</p>
+            <ul>
+              <li><kbd>左键</kbd><span>点按、滑动</span></li>
+              <li><kbd>右键</kbd><span>返回</span></li>
+              <li><kbd>中键</kbd><span>主页</span></li>
+              <li><kbd>滚轮</kbd><span>滚动</span></li>
+              <li><kbd>键盘</kbd><span>点击画面后直接打字，支持中文</span></li>
+            </ul>
           </div>
         </div>
 
@@ -42,18 +65,19 @@
           <button data-nav="home" aria-label="主页"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" /></svg></button>
           <button data-nav="recents" aria-label="多任务"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="1" /></svg></button>
         </nav>
+
         <nav class="toolbar" aria-label="设备操作">
+          <button data-action="back" title="返回"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" /></svg></button>
+          <button data-action="home" title="主页"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" /></svg></button>
+          <button data-action="recents" title="多任务"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2" /></svg></button>
+          <span class="sep"></span>
           <button data-action="power" title="电源键"><svg viewBox="0 0 24 24"><path d="M12 3v9M6.3 6.3a8 8 0 1 0 11.4 0" /></svg></button>
           <button data-action="volup" title="音量 +"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM17 9v6M14 12h6" /></svg></button>
           <button data-action="voldown" title="音量 −"><svg viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM15 12h6" /></svg></button>
           <button data-action="rotate" title="旋转屏幕"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5" /></svg></button>
           <span class="sep"></span>
-          <button data-action="back" title="返回"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7" /></svg></button>
-          <button data-action="home" title="主页"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" /></svg></button>
-          <button data-action="recents" title="最近任务"><svg viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2" /></svg></button>
           <button data-action="keyboard" title="键盘输入"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="12" rx="2" /><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" /></svg></button>
-          <span class="sep"></span>
-          <button data-action="notifications" title="下拉通知栏"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4" /></svg></button>
+          <button data-action="notifications" title="通知栏"><svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4" /></svg></button>
           <button data-action="quicksettings" title="快捷设置"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10" /><circle cx="16" cy="7" r="2" /><circle cx="8" cy="17" r="2" /></svg></button>
           <button data-action="screenoff" title="关闭手机屏幕"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z" /></svg></button>
           <span class="sep"></span>
@@ -64,129 +88,147 @@
         </nav>
       </section>
 
-      <aside class="panel">
-        <section class="card">
-          <h2>画质</h2>
-          <label class="field">
-            <span>视频编码</span>
-            <select id="videoCodec">
-              <option value="h264">H.264（兼容性最好）</option>
-              <option value="h265">H.265（同码率更清晰）</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>视频码率 <output id="bitrateOut"></output></span>
-            <input type="range" id="videoBitRate" min="1" max="40" step="1" />
-          </label>
-          <label class="field">
-            <span>最大分辨率（长边）</span>
-            <select id="maxSize">
-              <option value="0">原始分辨率</option>
-              <option value="2400">2400</option>
-              <option value="1920">1920</option>
-              <option value="1600">1600</option>
-              <option value="1280">1280</option>
-              <option value="1024">1024</option>
-              <option value="800">800</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>最大帧率</span>
-            <select id="maxFps">
-              <option value="0">不限制</option>
-              <option value="120">120</option>
-              <option value="90">90</option>
-              <option value="60">60</option>
-              <option value="30">30</option>
-            </select>
-          </label>
-        </section>
+      <aside class="panel" id="panel">
+        <div class="tabs" role="tablist">
+          <button role="tab" data-tab="video" aria-selected="true">画质</button>
+          <button role="tab" data-tab="audio" aria-selected="false">音频</button>
+          <button role="tab" data-tab="tools" aria-selected="false">工具</button>
+          <button role="tab" data-tab="log" aria-selected="false">日志</button>
+        </div>
 
-        <section class="card">
-          <h2>音频</h2>
-          <label class="switch"><input type="checkbox" id="audio" /><span>传输声音（Android 11+）</span></label>
-          <label class="field">
-            <span>音频来源</span>
-            <select id="audioSource">
-              <option value="output">系统输出（手机端静音）</option>
-              <option value="playback">应用播放 + 手机同时出声（Android 13+，部分 MIUI 不支持）</option>
-              <option value="mic">手机麦克风</option>
-              <option value="voice-call">通话声音（双方，部分机型可用）</option>
-              <option value="voice-call-downlink">通话声音（仅对方）</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>音频编码</span>
-            <select id="audioCodec">
-              <option value="opus">Opus（推荐）</option>
-              <option value="aac">AAC</option>
-              <option value="raw">无压缩 PCM（约 1.5 Mbps）</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>音频码率</span>
-            <select id="audioBitRate">
-              <option value="64000">64 kbps</option>
-              <option value="96000">96 kbps</option>
-              <option value="128000">128 kbps</option>
-              <option value="192000">192 kbps</option>
-              <option value="256000">256 kbps</option>
-            </select>
-          </label>
-          <label class="field">
-            <span>音频缓冲 <output id="bufferOut"></output></span>
-            <input type="range" id="audioBuffer" min="20" max="300" step="10" />
-          </label>
-          <label class="field">
-            <span>音量 <output id="volumeOut"></output></span>
-            <input type="range" id="volume" min="0" max="3" step="0.05" />
-          </label>
-        </section>
+        <div class="tab-pages">
+          <section class="tab-page" data-page="video">
+            <div class="group">
+              <h3>预设</h3>
+              <div class="segmented" id="presets">
+                <button data-preset="smooth"><b>流畅</b><small>4M · 1280</small></button>
+                <button data-preset="balanced"><b>均衡</b><small>8M · 1920</small></button>
+                <button data-preset="hd"><b>高清</b><small>16M · 2400</small></button>
+                <button data-preset="max"><b>原画</b><small>32M · 原始</small></button>
+              </div>
+            </div>
+            <div class="group">
+              <label class="field">
+                <span>视频码率 <output id="bitrateOut"></output></span>
+                <input type="range" id="videoBitRate" min="1" max="40" step="1" />
+              </label>
+              <label class="field">
+                <span>最大分辨率（长边）</span>
+                <select id="maxSize">
+                  <option value="0">原始分辨率</option>
+                  <option value="2400">2400</option>
+                  <option value="1920">1920</option>
+                  <option value="1600">1600</option>
+                  <option value="1280">1280</option>
+                  <option value="1024">1024</option>
+                  <option value="800">800</option>
+                </select>
+              </label>
+              <div class="field-row">
+                <label class="field">
+                  <span>最大帧率</span>
+                  <select id="maxFps">
+                    <option value="0">不限制</option>
+                    <option value="120">120</option>
+                    <option value="90">90</option>
+                    <option value="60">60</option>
+                    <option value="30">30</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>编码</span>
+                  <select id="videoCodec">
+                    <option value="h264">H.264</option>
+                    <option value="h265">H.265</option>
+                  </select>
+                </label>
+              </div>
+              <p class="note">H.264 兼容性最好；H.265 同码率更清晰，但需要浏览器支持硬件解码。</p>
+            </div>
+          </section>
 
-        <section class="card">
-          <h2>行为</h2>
-          <label class="switch"><input type="checkbox" id="stayAwake" /><span>插电时保持唤醒</span></label>
-          <label class="switch"><input type="checkbox" id="screenOff" /><span>连接后关闭手机屏幕</span></label>
-          <label class="switch"><input type="checkbox" id="showTouches" /><span>在手机上显示触摸点</span></label>
-          <label class="switch"><input type="checkbox" id="powerOffOnClose" /><span>断开时锁屏</span></label>
-          <p class="hint" id="reconnectHint" hidden>修改的设置会在重新连接后生效。<button id="reconnect" class="link">立即重连</button></p>
-        </section>
+          <section class="tab-page" data-page="audio" hidden>
+            <div class="group">
+              <label class="switch"><input type="checkbox" id="audio" /><span>传输声音</span></label>
+              <label class="field">
+                <span>音量 <output id="volumeOut"></output></span>
+                <input type="range" id="volume" min="0" max="3" step="0.05" />
+              </label>
+            </div>
+            <div class="group">
+              <label class="field">
+                <span>音频来源</span>
+                <select id="audioSource">
+                  <option value="output">系统输出（手机端静音）</option>
+                  <option value="playback">应用播放 + 手机同时出声（部分 MIUI 不支持）</option>
+                  <option value="mic">手机麦克风</option>
+                  <option value="voice-call">通话声音（双方，部分机型可用）</option>
+                  <option value="voice-call-downlink">通话声音（仅对方）</option>
+                </select>
+              </label>
+              <div class="field-row">
+                <label class="field">
+                  <span>编码</span>
+                  <select id="audioCodec">
+                    <option value="opus">Opus</option>
+                    <option value="aac">AAC</option>
+                    <option value="raw">PCM 无压缩</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>码率</span>
+                  <select id="audioBitRate">
+                    <option value="64000">64 kbps</option>
+                    <option value="96000">96 kbps</option>
+                    <option value="128000">128 kbps</option>
+                    <option value="192000">192 kbps</option>
+                    <option value="256000">256 kbps</option>
+                  </select>
+                </label>
+              </div>
+              <label class="field">
+                <span>缓冲 <output id="bufferOut"></output></span>
+                <input type="range" id="audioBuffer" min="20" max="300" step="10" />
+              </label>
+              <p class="note">缓冲越小延迟越低；网络不稳时调大可减少断续。</p>
+            </div>
+          </section>
 
-        <section class="card">
-          <h2>剪贴板</h2>
-          <textarea id="clipboard" rows="3" placeholder="手机复制的内容会自动出现在这里；也可以输入文字发送到手机"></textarea>
-          <div class="row">
-            <button id="clipSend">发送到手机</button>
-            <button id="clipPaste">粘贴到手机</button>
-            <button id="clipCopy">复制到电脑</button>
-          </div>
-        </section>
+          <section class="tab-page" data-page="tools" hidden>
+            <div class="group">
+              <h3>行为</h3>
+              <label class="switch"><input type="checkbox" id="stayAwake" /><span>插电时保持唤醒</span></label>
+              <label class="switch"><input type="checkbox" id="screenOff" /><span>连接后关闭手机屏幕</span></label>
+              <label class="switch"><input type="checkbox" id="showTouches" /><span>在手机上显示触摸点</span></label>
+              <label class="switch"><input type="checkbox" id="powerOffOnClose" /><span>断开时锁屏</span></label>
+            </div>
+            <div class="group">
+              <h3>剪贴板</h3>
+              <textarea id="clipboard" rows="3" placeholder="手机复制的内容会出现在这里；也可以输入文字发送到手机"></textarea>
+              <div class="row">
+                <button id="clipSend">发送到手机</button>
+                <button id="clipPaste">粘贴到手机</button>
+                <button id="clipCopy">复制到电脑</button>
+              </div>
+            </div>
+            <div class="group">
+              <h3>无线调试</h3>
+              <div class="row">
+                <input id="tcpAddr" placeholder="192.168.1.20:5555" aria-label="设备地址" />
+                <button id="tcpConnect">连接</button>
+              </div>
+            </div>
+          </section>
 
-        <section class="card">
-          <h2>状态</h2>
-          <dl class="stats" id="stats">
-            <dt>设备</dt><dd data-k="device">—</dd>
-            <dt>分辨率</dt><dd data-k="res">—</dd>
-            <dt>帧率</dt><dd data-k="fps">—</dd>
-            <dt>视频</dt><dd data-k="vkbps">—</dd>
-            <dt>音频</dt><dd data-k="akbps">—</dd>
-            <dt>音频缓冲</dt><dd data-k="abuf">—</dd>
-            <dt>解码器</dt><dd data-k="codec">—</dd>
-          </dl>
-        </section>
+          <section class="tab-page" data-page="log" hidden>
+            <pre id="log"></pre>
+          </section>
+        </div>
 
-        <section class="card">
-          <h2>无线调试</h2>
-          <div class="row">
-            <input id="tcpAddr" placeholder="192.168.1.20:5555" aria-label="设备地址" />
-            <button id="tcpConnect">adb connect</button>
-          </div>
-        </section>
-
-        <details class="card log">
-          <summary>日志</summary>
-          <pre id="log"></pre>
-        </details>
+        <div class="reconnect" id="reconnectHint" hidden>
+          <span>设置已修改，重连后生效</span>
+          <button id="reconnect" class="primary small">立即重连</button>
+        </div>
       </aside>
     </main>
     <div id="toast" class="toast" role="status" hidden></div>

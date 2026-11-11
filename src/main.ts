@@ -15,6 +15,8 @@ const placeholder = $('placeholder');
 const logEl = $('log');
 const clipboardEl = $<HTMLTextAreaElement>('clipboard');
 const banner = $('banner');
+const statsEl = $('stats');
+const layoutEl = $('layout');
 
 // ---------- 设置（保存在 localStorage） ----------
 interface Settings {
@@ -86,6 +88,7 @@ function bindSetting<K extends keyof Settings>(key: K, onChange?: () => void) {
     (settings as unknown as Record<string, unknown>)[key] = v;
     saveSettings();
     onChange?.();
+    updatePresetActive();
     if (session && RECONNECT_KEYS.has(key)) $('reconnectHint').hidden = false;
   };
   el.addEventListener(el instanceof HTMLSelectElement || isCheck ? 'change' : 'input', handler);
@@ -117,6 +120,69 @@ bindSetting('powerOffOnClose');
 updateBitrateLabel();
 updateBufferLabel();
 updateVolumeLabel();
+
+// ---------- 画质预设 ----------
+const PRESETS: Record<string, Pick<Settings, 'videoBitRate' | 'maxSize' | 'maxFps'>> = {
+  smooth: { videoBitRate: 4, maxSize: '1280', maxFps: '60' },
+  balanced: { videoBitRate: 8, maxSize: '1920', maxFps: '60' },
+  hd: { videoBitRate: 16, maxSize: '2400', maxFps: '90' },
+  max: { videoBitRate: 32, maxSize: '0', maxFps: '120' },
+};
+function updatePresetActive() {
+  document.querySelectorAll<HTMLButtonElement>('#presets button').forEach((b) => {
+    const p = PRESETS[b.dataset.preset!];
+    b.classList.toggle(
+      'active',
+      p.videoBitRate === settings.videoBitRate && p.maxSize === settings.maxSize && p.maxFps === settings.maxFps,
+    );
+  });
+}
+document.querySelectorAll<HTMLButtonElement>('#presets button').forEach((b) =>
+  b.addEventListener('click', () => {
+    Object.assign(settings, PRESETS[b.dataset.preset!]);
+    saveSettings();
+    $<HTMLInputElement>('videoBitRate').value = String(settings.videoBitRate);
+    $<HTMLSelectElement>('maxSize').value = settings.maxSize;
+    $<HTMLSelectElement>('maxFps').value = settings.maxFps;
+    updateBitrateLabel();
+    updatePresetActive();
+    if (session) $('reconnectHint').hidden = false;
+  }),
+);
+updatePresetActive();
+
+// ---------- 标签页 & 面板开关 ----------
+function selectTab(name: string) {
+  document.querySelectorAll<HTMLButtonElement>('.tabs button').forEach((b) =>
+    b.setAttribute('aria-selected', String(b.dataset.tab === name)),
+  );
+  document.querySelectorAll<HTMLElement>('.tab-page').forEach((p) => (p.hidden = p.dataset.page !== name));
+  try {
+    localStorage.setItem('miscreen.tab', name);
+  } catch {
+    /* ignore */
+  }
+}
+document.querySelectorAll<HTMLButtonElement>('.tabs button').forEach((b) =>
+  b.addEventListener('click', () => selectTab(b.dataset.tab!)),
+);
+function setPanel(open: boolean) {
+  layoutEl.classList.toggle('panel-closed', !open);
+  $('togglePanel').setAttribute('aria-pressed', String(open));
+  try {
+    localStorage.setItem('miscreen.panel', open ? '1' : '0');
+  } catch {
+    /* ignore */
+  }
+}
+$('togglePanel').addEventListener('click', () => setPanel(layoutEl.classList.contains('panel-closed')));
+try {
+  selectTab(localStorage.getItem('miscreen.tab') || 'video');
+  setPanel(localStorage.getItem('miscreen.panel') !== '0');
+} catch {
+  /* ignore */
+}
+statsEl.dataset.on = 'false';
 
 // ---------- UI 辅助 ----------
 function setStatus(state: 'idle' | 'connecting' | 'connected' | 'error', text: string) {
@@ -280,6 +346,9 @@ function connect() {
 
   setStatus('connecting', '连接中…');
   connectBtn.textContent = '断开';
+  connectBtn.classList.add('danger');
+  for (const k of ['device', 'res', 'fps', 'vkbps', 'akbps', 'abuf', 'codec']) setStat(k, '—');
+  statsEl.dataset.on = 'true';
   logEl.textContent = '';
 
   ws.onmessage = (ev) => {
@@ -310,8 +379,10 @@ function connect() {
     setStat('vkbps', `${(v.kbps / 1000).toFixed(2)} Mbps`);
     setStat('codec', v.codec || '—');
     if (audio) {
-      setStat('akbps', `${audio.stats.codec || '—'} · ${audio.stats.kbps} kbps`);
-      setStat('abuf', `${audio.stats.bufferedMs} ms · 欠载 ${audio.stats.underruns}`);
+      const codec = audio.stats.codec ? audio.stats.codec.toUpperCase() : '—';
+      setStat('akbps', `${codec} ${audio.stats.kbps}k`);
+      const u = audio.stats.underruns;
+      setStat('abuf', `${audio.stats.bufferedMs} ms${u ? ` · 欠载 ${u}` : ''}`);
     } else {
       setStat('akbps', '关闭');
       setStat('abuf', '—');
@@ -388,6 +459,8 @@ function disconnect(keepImmersive = false) {
   placeholder.hidden = false;
   if (!keepImmersive) setImmersive(false);
   connectBtn.textContent = '连接';
+  connectBtn.classList.remove('danger');
+  statsEl.dataset.on = 'false';
   setStatus('idle', '未连接');
 }
 
